@@ -17,16 +17,11 @@ public class RegistrationController {
         this.registrationService = registrationService;
     }
 
-    /**
-     * Endpoint to register a new user.
-     * @param userDTO user registration info
-     * @return success message or specific error
-     */
     @PostMapping
     public ResponseEntity<String> registerUser(@Valid @RequestBody UserDTO userDTO) {
         try {
-            registrationService.register(userDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("✅ User registered successfully.");
+            String token = registrationService.register(userDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(token);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("⚠️ " + e.getMessage());
         } catch (Exception e) {
