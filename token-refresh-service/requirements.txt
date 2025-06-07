@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+redis
+grpcio
+grpcio-tools
+pydantic
