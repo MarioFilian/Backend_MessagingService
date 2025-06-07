@@ -19,20 +19,32 @@ public class RegistrationService {
 
     /**
      * Register a new user in the system.
-     * @param userDTO user registration data.
-     * @throws IllegalArgumentException if username or email already exists.
+     * @param userDTO user registration data
+     * @throws IllegalArgumentException if username or email already exists
      */
     public void register(UserDTO userDTO) {
+        validateUserUniqueness(userDTO);
+
+        String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
+
+        User newUser = new User(
+                userDTO.getUsername(),
+                hashedPassword,
+                userDTO.getEmail(),
+                userDTO.getFirstName(),
+                userDTO.getLastName(),
+                userDTO.getRole()
+        );
+
+        userRepository.save(newUser);
+    }
+
+    private void validateUserUniqueness(UserDTO userDTO) {
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new IllegalArgumentException("Username is already taken.");
         }
         if (userRepository.existsByEmail(userDTO.getEmail())) {
             throw new IllegalArgumentException("Email is already in use.");
         }
-
-        String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
-        User newUser = new User(userDTO.getUsername(), hashedPassword, userDTO.getEmail());
-
-        userRepository.save(newUser);
     }
 }
