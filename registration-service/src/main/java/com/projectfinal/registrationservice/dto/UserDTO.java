@@ -1,5 +1,6 @@
 package com.projectfinal.registrationservice.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -7,23 +8,29 @@ import jakarta.validation.constraints.Size;
 public class UserDTO {
 
     @NotBlank(message = "Username is mandatory")
+    @Schema(example = "johndoe123", description = "Unique username")
     private String username;
 
     @NotBlank(message = "Password is mandatory")
     @Size(min = 6, message = "Password must have at least 6 characters")
+    @Schema(example = "secretPass123", description = "Password with minimum 6 characters")
     private String password;
 
     @NotBlank(message = "Email is mandatory")
     @Email(message = "Email should be valid")
+    @Schema(example = "john.doe@example.com", description = "Valid email address")
     private String email;
 
     @NotBlank(message = "First name is mandatory")
+    @Schema(example = "John", description = "User's first name")
     private String firstName;
 
     @NotBlank(message = "Last name is mandatory")
+    @Schema(example = "Doe", description = "User's last name")
     private String lastName;
 
-    private String role = "USER"; // Default value if not provided
+    @Schema(example = "USER", description = "User role (e.g., USER, ADMIN)")
+    private String role;
 
     // Constructors
     public UserDTO() {}
