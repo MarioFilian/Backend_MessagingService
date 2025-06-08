@@ -1,0 +1,128 @@
+name: Docker Image CI/CD for Registration Service
+
+on:
+  push:
+    paths:
+      - 'registration-service/**'
+    branches: [ "development" ]
+  pull_request:
+    paths:
+      - 'registration-service/**'
+    branches:
+      - "QA"
+      - "main"
+
+jobs:
+  build-and-deploy:
+    name: Build, Push Docker Image and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código fuente
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Instalar JDK y Maven
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # 3. Construir el archivo .jar sin ejecutar pruebas
+      - name: Build .jar file (Skip tests)
+        run: mvn clean install -DskipTests -f registration-service/pom.xml
+        env:
+          APP_NAME: ${{ secrets.APP_NAME }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          HIBERNATE_DDL_AUTO: ${{ secrets.HIBERNATE_DDL_AUTO }}
+          SHOW_SQL: ${{ secrets.SHOW_SQL }}
+          HIBERNATE_DIALECT: ${{ secrets.HIBERNATE_DIALECT }}
+          LOGGING_LEVEL_HIBERNATE_SQL: ${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION_MS: ${{ secrets.JWT_EXPIRATION_MS }}
+          CORS_ALLOWED: ${{ secrets.CORS_ALLOWED }}
+
+      # 4. Log in en DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 5. Construir y subir la imagen Docker a DockerHub
+      - name: Build and push Docker image
+        run: |
+          docker build registration-service/. --file registration-service/Dockerfile \
+            --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }} \
+            --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+
+      # 6. Desplegar en EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            # Instalar Docker si no está presente
+            if ! command -v docker &> /dev/null; then
+              echo "==> Installing Docker"
+              sudo yum update -y
+              sudo yum install -y docker
+              sudo service docker start
+              sudo usermod -a -G docker ec2-user
+            fi
+
+            # Crear archivo .env para variables de entorno
+            echo "APP_NAME=${{ secrets.APP_NAME }}" > /home/ec2-user/registration-service.env
+            echo "SERVER_PORT=${{ secrets.SERVER_PORT }}" >> /home/ec2-user/registration-service.env
+            echo "DB_URL=${{ secrets.DB_URL }}" >> /home/ec2-user/registration-service.env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> /home/ec2-user/registration-service.env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> /home/ec2-user/registration-service.env
+            echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> /home/ec2-user/registration-service.env
+            echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> /home/ec2-user/registration-service.env
+            echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> /home/ec2-user/registration-service.env
+            echo "LOGGING_LEVEL_HIBERNATE_SQL=${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}" >> /home/ec2-user/registration-service.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/ec2-user/registration-service.env
+            echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" >> /home/ec2-user/registration-service.env
+            echo "CORS_ALLOWED=${{ secrets.CORS_ALLOWED }}" >> /home/ec2-user/registration-service.env
+
+            # Descargar imagen Docker más reciente
+            echo "==> Pulling the latest Docker image"
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+
+            # Detener y eliminar contenedor previo
+            if [ $(sudo docker ps -aq -f name=registration-service) ]; then
+              echo "==> Stopping and removing existing container"
+              sudo docker stop registration-service
+              sudo docker rm registration-service
+            fi
+
+            # Ejecutar nuevo contenedor con .env
+            echo "==> Starting a new container"
+            sudo docker run -d --name registration-service -p 80:${{ secrets.SERVER_PORT_REGISTRATION }} \
+              --env-file /home/ec2-user/registration-service.env \
+              ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+
+            # Validar ejecución del contenedor
+            if sudo docker ps -f name=registration-service | grep registration-service; then
+              echo "==> Container started successfully"
+            else
+              echo "==> Failed to start the container. Check Docker logs."
+              exit 1
+            fi
