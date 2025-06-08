@@ -60,4 +60,8 @@ public class User {
         this.createdAt = LocalDateTime.now();
         this.enabled = true;
     }
+
+    public String getUsername() {
+        return username;
+    }
 }
