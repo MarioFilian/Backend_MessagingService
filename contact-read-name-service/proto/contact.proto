@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package contact;
 
+option java_multiple_files = true;
+option java_package = "com.example.contact";
+option java_outer_classname = "ContactProto";
+
 service ContactService {
   rpc GetContactsByName (ContactNameRequest) returns (ContactListResponse);
 }
@@ -11,7 +15,7 @@ message ContactNameRequest {
 }
 
 message Contact {
-  int32 id = 1;
+  string element_id = 1;  // Usamos elementId de Neo4j
   string name = 2;
   string phone = 3;
 }
