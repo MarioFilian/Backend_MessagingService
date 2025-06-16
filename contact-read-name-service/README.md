@@ -66,7 +66,7 @@ Your gRPC interface is defined in `proto/contact.proto`.
 You can regenerate the Python bindings using:
 
 ```bash
-python -m grpc_tools.protoc -I=./proto --python_out=./app --grpc_python_out=./app ./proto/contact.proto
+python -m grpc_tools.protoc -I ./proto --python_out=./app --grpc_python_out=./app ./proto/contact.proto
 ```
 
 ---
