@@ -5,6 +5,6 @@ class ContactCreate(BaseModel):
     phone: str = Field(..., example="+593987654321")
 
 class ContactResponse(BaseModel):
-    id: int
+    element_id: str
     name: str
     phone: str
