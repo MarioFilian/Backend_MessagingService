@@ -9,9 +9,9 @@ import (
 )
 
 type Contact struct {
-    ID    int64  `json:"id"`
-    Name  string `json:"name"`
-    Phone string `json:"phone"`
+    ElementID string `json:"element_id"` // usamos elementId como string
+    Name      string `json:"name"`
+    Phone     string `json:"phone"`
 }
 
 type ErrorResponse struct {
@@ -30,21 +30,21 @@ func GetContactByPhone(c *gin.Context, driver neo4j.DriverWithContext) {
 
     result, err := session.ExecuteRead(context.Background(), func(tx neo4j.ManagedTransaction) (interface{}, error) {
         record, err := tx.Run(context.Background(),
-            "MATCH (c:Contact {phone: $phone}) RETURN id(c) as id, c.name as name, c.phone as phone LIMIT 1",
+            "MATCH (c:Contact {phone: $phone}) RETURN elementId(c) as element_id, c.name as name, c.phone as phone LIMIT 1",
             map[string]interface{}{"phone": phone})
         if err != nil {
             return nil, err
         }
         if record.Next(context.Background()) {
             rec := record.Record()
-            id, _ := rec.Get("id")
+            id, _ := rec.Get("element_id")
             name, _ := rec.Get("name")
             phone, _ := rec.Get("phone")
 
             return Contact{
-                ID:    id.(int64),
-                Name:  name.(string),
-                Phone: phone.(string),
+                ElementID: id.(string),
+                Name:      name.(string),
+                Phone:     phone.(string),
             }, nil
         }
         return nil, nil
