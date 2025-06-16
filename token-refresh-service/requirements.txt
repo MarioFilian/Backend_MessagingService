@@ -1,7 +1,6 @@
 fastapi
-uvicorn[standard]
+strawberry-graphql
+uvicorn
 python-dotenv
 redis
-grpcio
-grpcio-tools
-pydantic
+pyjwt
