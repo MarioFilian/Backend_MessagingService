@@ -1,0 +1,15 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+validate_access:
+    path: /validate/access
+    controller: App\Controller\ValidateTokenController::validateAccess
+    methods: [POST]
+
+validate_refresh:
+    path: /validate/refresh
+    controller: App\Controller\ValidateTokenController::validateRefresh
+    methods: [POST]
