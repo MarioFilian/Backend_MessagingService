@@ -1,0 +1,4 @@
+grpcio
+grpcio-tools
+neo4j
+python-dotenv
