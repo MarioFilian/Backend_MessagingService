@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package contact;
+
+service ContactService {
+  rpc GetContactsByName (ContactNameRequest) returns (ContactListResponse);
+}
+
+message ContactNameRequest {
+  string name = 1;
+}
+
+message Contact {
+  int32 id = 1;
+  string name = 2;
+  string phone = 3;
+}
+
+message ContactListResponse {
+  repeated Contact contacts = 1;
+}
