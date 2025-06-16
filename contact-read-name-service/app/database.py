@@ -17,7 +17,8 @@ class Neo4jConnection:
     def get_contacts_by_name(self, name: str):
         with self.driver.session() as session:
             result = session.run(
-                "MATCH (c:Contact) WHERE c.name CONTAINS $name RETURN id(c) as id, c.name as name, c.phone as phone",
+                "MATCH (c:Contact) WHERE c.name CONTAINS $name "
+                "RETURN elementId(c) AS element_id, c.name AS name, c.phone AS phone",
                 name=name
             )
             return [record.data() for record in result]
