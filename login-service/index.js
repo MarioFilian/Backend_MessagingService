@@ -9,11 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rutas API
-app.use('/api/login', authRoutes);
+setupSwagger(app); // Primero swagger
+app.use('/auth', authRoutes); // Luego tus rutas reales
 
-// Swagger UI disponible en /api-docs
-setupSwagger(app);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
