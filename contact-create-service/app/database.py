@@ -18,7 +18,7 @@ class Neo4jConnection:
         with self.driver.session() as session:
             query = (
                 "CREATE (c:Contact {name: $name, phone: $phone}) "
-                "RETURN id(c) as id, c.name as name, c.phone as phone"
+                "RETURN elementId(c) as element_id, c.name as name, c.phone as phone"
             )
             result = session.run(query, name=name, phone=phone)
             return result.single()
