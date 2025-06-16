@@ -12,7 +12,7 @@ app = FastAPI(
 # Configuración de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Reemplaza con dominios específicos en producción
+    allow_origins=["*"],  # En producción, usa dominios específicos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,7 +24,7 @@ neo4j = Neo4jConnection()
 def create_contact(contact: ContactCreate):
     result = neo4j.create_contact(contact.name, contact.phone)
     return {
-        "id": result["id"],
+        "element_id": result["element_id"],
         "name": result["name"],
         "phone": result["phone"]
     }
