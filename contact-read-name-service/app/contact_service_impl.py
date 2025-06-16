@@ -11,7 +11,11 @@ class ContactService(contact_pb2_grpc.ContactServiceServicer):
 
         return contact_pb2.ContactListResponse(
             contacts=[
-                contact_pb2.Contact(id=contact['id'], name=contact['name'], phone=contact['phone'])
+                contact_pb2.Contact(
+                    element_id=contact['element_id'],
+                    name=contact['name'],
+                    phone=contact['phone']
+                )
                 for contact in contacts
             ]
         )
