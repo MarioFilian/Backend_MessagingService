@@ -4,9 +4,34 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const axios = require('axios');
 
 // Cargar variables de entorno
 dotenv.config();
+
+// Middleware para validar accessToken
+const validateAccessToken = async (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Access token faltante' });
+  }
+
+  try {
+    const response = await axios.post(
+      `http://${process.env.HOST_VALIDATE}:${process.env.PORT_VALIDATE}/validate/access`,
+      { accessToken: token }
+    );
+
+    if (response.data.valid === true) {
+      return next();
+    } else {
+      return res.status(401).json({ error: 'Access token inválido' });
+    }
+  } catch (err) {
+    console.error('❌ Error validando token:', err.message);
+    return res.status(500).json({ error: 'Error validando token' });
+  }
+};
 
 // Configuración de rutas proxy
 const routes = [
@@ -21,7 +46,8 @@ const routes = [
     target: `http://${process.env.HOST_REGISTER}:${process.env.PORT_REGISTER}`,
     rewritePrefix: '/users',
     targetPrefix: '/api',
-    name: 'users/register'
+    name: 'users/register',
+    protected: true // esta ruta requiere validación
   }
 ];
 
@@ -45,8 +71,14 @@ app.use((req, res, next) => {
 });
 
 // Función para crear middleware proxy
-const createServiceProxy = ({ route, target, rewritePrefix, targetPrefix = rewritePrefix, name }) => {
-  app.use(route, createProxyMiddleware({
+const createServiceProxy = ({ route, target, rewritePrefix, targetPrefix = rewritePrefix, name, protected: isProtected }) => {
+  const middlewares = [];
+
+  if (isProtected) {
+    middlewares.push(validateAccessToken);
+  }
+
+  middlewares.push(createProxyMiddleware({
     target,
     changeOrigin: true,
     pathRewrite: {
@@ -71,6 +103,8 @@ const createServiceProxy = ({ route, target, rewritePrefix, targetPrefix = rewri
       }
     }
   }));
+
+  app.use(route, ...middlewares);
 };
 
 // Registrar todos los proxies
