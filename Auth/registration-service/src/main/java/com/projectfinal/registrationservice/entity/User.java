@@ -1,9 +1,7 @@
 package com.projectfinal.registrationservice.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +10,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -34,34 +34,28 @@ public class User {
     private String lastName;
 
     @Column(name = "role", nullable = false)
-    private String role = "USER";  // valores: USER, ADMIN, etc.
+    private String role;
 
     @Column(name = "enabled", nullable = false)
-    private boolean enabled = true;
+    private boolean enabled;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.enabled = true;
+        if (this.role == null) {
+            this.role = "USER";
+        }
+    }
+
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public User(String username, String password, String email, String firstName, String lastName, String role) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.role = role != null ? role : "USER";
-        this.createdAt = LocalDateTime.now();
-        this.enabled = true;
-    }
-
-    public String getUsername() {
-        return username;
     }
 }
