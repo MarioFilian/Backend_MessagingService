@@ -11,7 +11,6 @@ import 'package:postgres/postgres.dart';
 late final PostgreSQLConnection db;
 
 void main() async {
-  // Cargar variables de entorno desde el archivo .env
   final env = DotEnv()..load();
 
   final host = env['DB_HOST'] ?? 'localhost';
@@ -30,6 +29,17 @@ void main() async {
 
   await db.open();
   print('✅ Connected to PostgreSQL at $host:$port ($dbName)');
+
+  // Crear tabla si no existe
+  await db.query('''
+    CREATE TABLE reset_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      token TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  ''');
 
   final app = Router();
 
@@ -55,13 +65,26 @@ void main() async {
       return Response(404, body: jsonEncode({'error': 'Email not found'}));
     }
 
+    final userId = results.first[0];
     final userEnabled = results.first[1] == true;
+
     if (!userEnabled) {
       return Response.forbidden(jsonEncode({'error': 'User is disabled'}));
     }
 
     final token = _generateToken();
-    print('🔐 Token for $email: $token');
+    final expiresAt = DateTime.now().toUtc().add(Duration(hours: 1));
+
+    await db.query('''
+      INSERT INTO reset_tokens (user_id, token, expires_at)
+      VALUES (@user_id, @token, @expires_at)
+    ''', substitutionValues: {
+      'user_id': userId,
+      'token': token,
+      'expires_at': expiresAt.toIso8601String(),
+    });
+
+    print('🔐 Token for $email → $token');
 
     return Response.ok(
       jsonEncode({'message': 'Token generated', 'token': token}),
@@ -69,14 +92,16 @@ void main() async {
     );
   });
 
-  final handler = const Pipeline().addMiddleware(logRequests()).addHandler(app);
+  final handler = Pipeline().addMiddleware(logRequests()).addHandler(app);
 
   final server = await serve(handler, InternetAddress.anyIPv4, 3005);
-  print('🚀 Server running on http://localhost:${server.port}');
+  print(
+      '🚀 Forgot Password Service running on http://localhost:${server.port}');
 }
 
 String _generateToken() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   final rand = Random.secure();
   return List.generate(32, (_) => chars[rand.nextInt(chars.length)]).join();
 }
