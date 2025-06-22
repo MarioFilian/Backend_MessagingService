@@ -36,24 +36,26 @@ public class RegistrationService {
         }
 
         String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
-        User newUser = new User(
-                userDTO.getUsername(),
-                hashedPassword,
-                userDTO.getEmail(),
-                userDTO.getFirstName(),
-                userDTO.getLastName(),
-                userDTO.getRole()
-        );
+
+        User newUser = User.builder()
+                .username(userDTO.getUsername())
+                .password(hashedPassword)
+                .email(userDTO.getEmail())
+                .firstName(userDTO.getFirstName())
+                .lastName(userDTO.getLastName())
+                .role(userDTO.getRole() != null ? userDTO.getRole() : "USER")
+                .enabled(true)
+                .build();
 
         userRepository.save(newUser);
 
         String accessToken = jwtUtil.generateAccessToken(newUser.getUsername(), newUser.getRole());
         String refreshToken = jwtUtil.generateRefreshToken(newUser.getUsername(), newUser.getRole());
 
-        // Guardar el refresh token en Redis
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
-        ops.set(refreshToken, newUser.getUsername(), Duration.ofDays(7)); // TTL: 7 días
+        ops.set(refreshToken, newUser.getUsername(), Duration.ofDays(7));
 
         return new TokenResponseDTO(accessToken, refreshToken);
     }
 }
+
