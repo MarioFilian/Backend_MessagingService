@@ -11,4 +11,5 @@ This microservice handles JWT access token renewal via a valid refresh token.
 ## 🧪 Run Locally
 
 ```bash
-uvicorn app.main:app --reload --port 3003
+
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 3003
