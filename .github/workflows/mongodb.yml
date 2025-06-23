@@ -1,0 +1,60 @@
+name: Deploy MongoDB
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'DB/MongoDB/docker-compose.yml'
+      - 'DB/MongoDB/init-mongo.template.js'
+      - '.github/workflows/mongodb.yml'
+
+  push:
+    branches: [QA, development]
+    paths:
+      - 'DB/MongoDB/docker-compose.yml'
+      - 'DB/MongoDB/init-mongo.template.js'
+      - '.github/workflows/mongodb.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext
+
+      - name: Generate init-mongo.js
+        working-directory: DB/MongoDB
+        run: |
+          envsubst < init-mongo.template.js > init-mongo.js
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MONGO_HOST }}
+          username: ${{ secrets.USER_UBUNTU }}
+          key: ${{ secrets.SSH_KEY_DB }}
+          source: |
+            DB/MongoDB/docker-compose.yml
+            DB/MongoDB/init-mongo.js
+          target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+
+      - name: SSH into EC2 and deploy MongoDB
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MONGO_HOST }}
+          username: ${{ secrets.USER_UBUNTU }}
+          key: ${{ secrets.SSH_KEY_DB }}
+          script: |
+            sudo mkdir -p /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+            cd /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+            sudo docker-compose down || true
+            sudo docker-compose up -d
+            sudo docker ps
