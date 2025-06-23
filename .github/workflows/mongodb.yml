@@ -49,6 +49,7 @@ jobs:
             DB/MongoDB/docker-compose.yml
             DB/MongoDB/init-mongo.js
           target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+          debug: true
 
       - name: SSH into EC2 and deploy MongoDB
         uses: appleboy/ssh-action@v1.0.0
