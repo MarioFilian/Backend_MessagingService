@@ -63,52 +63,52 @@ jobs:
           port: 22
           script: |
             # Instalar Docker si no está presente
-            if ! command -v docker &> /dev/null; then
+                 if ! command -v docker &> /dev/null; then
               echo "==> Installing Docker"
-              sudo yum update -y
-              sudo yum install -y docker
-              sudo service docker start
-              sudo usermod -a -G docker ec2-user
-            fi
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+              sudo usermod -aG docker $USER
+                 fi
 
-            # Crear archivo .env
-            echo "PORT=${{ secrets.PORT_LOGIN }}" > /home/ec2-user/login-service.env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/ec2-user/login-service.env
-            echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> /home/ec2-user/login-service.env
-            echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> /home/ec2-user/login-service.env
-            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> /home/ec2-user/login-service.env
-            echo "DB_HOST=${{ secrets.POSTGRES_HOST }}" >> /home/ec2-user/login-service.env
-            echo "DB_PORT=${{ secrets.DB_PORT }}" >> /home/ec2-user/login-service.env
-            echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> /home/ec2-user/login-service.env
-            echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/ec2-user/login-service.env
-            echo "DB_NAME=${{ secrets.DB_NAME }}" >> /home/ec2-user/login-service.env
+                 # Crear archivo .env
+                 echo "PORT=${{ secrets.PORT_LOGIN }}" > /home/ubuntu/login-service.env
+                 echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/ubuntu/login-service.env
+                 echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> /home/ubuntu/login-service.env
+                 echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> /home/ubuntu/login-service.env
+                 echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> /home/ubuntu/login-service.env
+                 echo "DB_HOST=${{ secrets.POSTGRES_HOST }}" >> /home/ubuntu/login-service.env
+                 echo "DB_PORT=${{ secrets.DB_PORT }}" >> /home/ubuntu/login-service.env
+                 echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> /home/ubuntu/login-service.env
+                 echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/ubuntu/login-service.env
+                 echo "DB_NAME=${{ secrets.DB_NAME }}" >> /home/ubuntu/login-service.env
 
-            # Eliminar imagen vieja
-            sudo docker image prune -f
+                 # Eliminar imagen vieja
+                 sudo docker image prune -f
 
-            # Pull de imagen
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/login-service:latest
+                 # Pull de imagen
+                 sudo docker pull ${{ secrets.DOCKER_USERNAME }}/login-service:latest
 
-            # Detener contenedor anterior si existe
-            if [ $(sudo docker ps -aq -f name=login-service) ]; then
+                 # Detener contenedor anterior si existe
+                 if [ $(sudo docker ps -aq -f name=login-service) ]; then
               echo "==> Stopping and removing existing container"
               sudo docker stop login-service
               sudo docker rm login-service
-            fi
+                 fi
 
-            # Ejecutar nuevo contenedor
-            echo "==> Starting new container"
-            sudo docker run -d --name login-service \
-              --env-file /home/ec2-user/login-service.env \
+                 # Ejecutar nuevo contenedor
+                 echo "==> Starting new container"
+                 sudo docker run -d --name login-service \
+              --env-file /home/ubuntu/login-service.env \
               -p 3001:${{ secrets.PORT_LOGIN }} \
               --restart unless-stopped \
               ${{ secrets.DOCKER_USERNAME }}/login-service:latest
 
-            # Verificar que está corriendo
-            if sudo docker ps -f name=login-service | grep login-service; then
+                 # Verificar que está corriendo
+                 if sudo docker ps -f name=login-service | grep login-service; then
               echo "✅ Container started successfully"
-              rm -f /home/ec2-user/login-service.env
-            else
+              rm -f /home/ubuntu/login-service.env
+                 else
               echo "❌ Failed to start the container"
               exit 1
-            fi
+                 fi
