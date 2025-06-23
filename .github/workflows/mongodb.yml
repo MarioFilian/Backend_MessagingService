@@ -73,6 +73,30 @@ jobs:
             echo "Checking if mongo-deploy exists:"
             ls -la /home/${{ secrets.USER_UBUNTU }}/mongo-deploy || echo "mongo-deploy does not exist"
 
+      - name: Install Docker and Docker Compose on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MONGO_HOST }}
+          username: ${{ secrets.USER_UBUNTU }}
+          key: ${{ secrets.SSH_KEY_DB }}
+          script: |
+            # Update and install Docker
+            sudo apt-get update
+            sudo apt-get install -y docker.io curl
+            sudo systemctl start docker
+            sudo systemctl enable docker
+
+            # Add user to docker group (optional, for running docker without sudo)
+            sudo usermod -aG docker $USER || true
+
+            # Install Docker Compose
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+
+            # Verify installations
+            docker --version || echo "docker not found"
+            docker-compose --version || echo "docker-compose not found"
+
       - name: SSH into EC2 and deploy MongoDB
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -80,7 +104,6 @@ jobs:
           username: ${{ secrets.USER_UBUNTU }}
           key: ${{ secrets.SSH_KEY_DB }}
           script: |
-            sudo mkdir -p /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
             cd /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
             sudo docker-compose down || true
             sudo docker-compose up -d
