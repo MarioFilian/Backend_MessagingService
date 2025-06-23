@@ -104,7 +104,7 @@ jobs:
           username: ${{ secrets.USER_UBUNTU }}
           key: ${{ secrets.SSH_KEY_DB }}
           script: |
-            cd /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+            cd /home/${{ secrets.USER_UBUNTU }}/mongo-deploy/BD/MongoDB
             sudo docker-compose down || true
             sudo docker-compose up -d
             sudo docker ps
