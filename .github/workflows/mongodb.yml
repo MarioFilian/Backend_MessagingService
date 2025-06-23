@@ -31,9 +31,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gettext
 
       - name: Generate init-mongo.js
-        working-directory: DB/MongoDB
         run: |
-          envsubst < init-mongo.template.js > init-mongo.js
+          envsubst < DB/MongoDB/init-mongo.template.js > DB/MongoDB/init-mongo.js
+
+      - name: List files for verification
+        run: |
+          echo "Verifying files in DB/MongoDB"
+          ls -lh DB/MongoDB
 
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
