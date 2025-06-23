@@ -45,9 +45,7 @@ jobs:
           host: ${{ secrets.MONGO_HOST }}
           username: ${{ secrets.USER_UBUNTU }}
           key: ${{ secrets.SSH_KEY_DB }}
-          source: |
-            DB/MongoDB/docker-compose.yml
-            DB/MongoDB/init-mongo.js
+          source: DB/MongoDB/docker-compose.yml DB/MongoDB/init-mongo.js
           target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
           debug: true
 
