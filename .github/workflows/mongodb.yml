@@ -51,6 +51,21 @@ jobs:
           target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
           debug: true
 
+      - name: Debug EC2 filesystem before deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MONGO_HOST }}
+          username: ${{ secrets.USER_UBUNTU }}
+          key: ${{ secrets.SSH_KEY_DB }}
+          script: |
+            echo "Home dir: $(pwd)"
+            echo "Listing home directory contents:"
+            ls -la
+            echo "Listing /home/${{ secrets.USER_UBUNTU }}:"
+            ls -la /home/${{ secrets.USER_UBUNTU }}
+            echo "Checking if mongo-deploy exists:"
+            ls -la /home/${{ secrets.USER_UBUNTU }}/mongo-deploy || echo "mongo-deploy does not exist"
+
       - name: SSH into EC2 and deploy MongoDB
         uses: appleboy/ssh-action@v1.0.0
         with:
