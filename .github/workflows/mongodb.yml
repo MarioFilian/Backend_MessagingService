@@ -39,13 +39,22 @@ jobs:
           echo "Verifying files in DB/MongoDB"
           ls -lh DB/MongoDB
 
+      - name: Ensure target directory exists on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MONGO_HOST }}
+          username: ${{ secrets.USER_UBUNTU }}
+          key: ${{ secrets.SSH_KEY_DB }}
+          script: |
+            mkdir -p /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.MONGO_HOST }}
           username: ${{ secrets.USER_UBUNTU }}
           key: ${{ secrets.SSH_KEY_DB }}
-          source: DB/MongoDB/docker-compose.yml DB/MongoDB/init-mongo.js
+          source: "DB/MongoDB/docker-compose.yml,DB/MongoDB/init-mongo.js"
           target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
           debug: true
 
