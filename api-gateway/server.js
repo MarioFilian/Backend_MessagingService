@@ -47,7 +47,7 @@ const routes = [
     rewritePrefix: '/users',
     targetPrefix: '/api',
     name: 'users/register',
-    protected: true // esta ruta requiere validación
+    //protected: true // esta ruta requiere validación
   }
 ];
 
