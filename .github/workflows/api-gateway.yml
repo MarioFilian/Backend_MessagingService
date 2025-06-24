@@ -22,7 +22,8 @@ jobs:
       REMOTE_HOST: ${{ secrets.EC2_HOST_API_GATEWAY }}
       REMOTE_USER: ${{ secrets.EC2_USER }}
       SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-      ENV_PATH: /home/${{ secrets.EC2_USER }}/api-gateway.env
+      ENV_DIR: /home/${{ secrets.EC2_USER }}/api-gateway
+      ENV_PATH: /home/${{ secrets.EC2_USER }}/api-gateway/.env
 
     steps:
       - name: 📦 Checkout código fuente
@@ -41,16 +42,17 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}
 
-      - name: 🧹 Eliminar posible archivo/directorio api-gateway.env remoto previo
+      - name: 🧹 Eliminar posible directorio remoto api-gateway previo
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.REMOTE_HOST }}
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           script: |
-            sudo rm -rf ${{ env.ENV_PATH }}
+            sudo rm -rf ${{ env.ENV_DIR }}
+            sudo mkdir -p ${{ env.ENV_DIR }}
 
-      - name: 📝 Crear archivo `.env` remoto temporal
+      - name: 📝 Crear archivo `.env` local temporal
         run: |
           echo "HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}" > env.temp
           echo "HOST_REGISTER=${{ secrets.EC2_HOST_REGISTRATION }}" >> env.temp
@@ -79,7 +81,7 @@ jobs:
 
             IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/api-gateway:latest"
             CONTAINER_NAME="api-gateway"
-            ENV_PATH="/home/${{ secrets.EC2_USER }}/api-gateway.env"
+            ENV_PATH="${{ env.ENV_PATH }}"
 
             echo "📦 Verificando instalación de Docker..."
             if ! command -v docker &> /dev/null; then
@@ -114,9 +116,6 @@ jobs:
               -p 80:3000 \
               --env-file $ENV_PATH \
               $IMAGE_NAME
-
-            echo "🧹 Eliminando archivo temporal .env..."
-            sudo rm -f $ENV_PATH
 
             echo "✅ Despliegue completo."
 
