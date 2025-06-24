@@ -42,7 +42,7 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}
 
-      - name: 🧹 Eliminar posible directorio remoto api-gateway previo
+      - name: 🧹 Eliminar posible directorio api-gateway remoto previo y crear carpeta
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.REMOTE_HOST }}
@@ -61,14 +61,23 @@ jobs:
           echo "PORT_REGISTER=${{ secrets.SERVER_PORT_REGISTRATION }}" >> env.temp
           echo "PORT_VALIDATE=${{ secrets.SERVER_PORT_VALIDATE }}" >> env.temp
 
-      - name: 📤 Subir archivo `.env` al servidor remoto
+      - name: 📤 Subir archivo `.env` al servidor remoto (directorio)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.REMOTE_HOST }}
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           source: env.temp
-          target: ${{ env.ENV_PATH }}
+          target: ${{ env.ENV_DIR }}/
+
+      - name: 📝 Renombrar archivo a `.env` en servidor remoto
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          username: ${{ env.REMOTE_USER }}
+          key: ${{ env.SSH_KEY }}
+          script: |
+            mv ${{ env.ENV_DIR }}/env.temp ${{ env.ENV_PATH }}
 
       - name: 📡 Desplegar y configurar servidor remoto
         uses: appleboy/ssh-action@v1.0.3
