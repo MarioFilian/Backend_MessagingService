@@ -1,4 +1,4 @@
-name: 🚀 CI/CD: API Gateway Docker Build & Deploy
+name: "🚀 CI/CD: API Gateway Docker Build & Deploy"
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: 🛠️ Construir imagen Docker del API Gateway
+      - name: 🛠️ Construir y subir imagen del API Gateway
         uses: docker/build-push-action@v5
         with:
           context: ./api-gateway
@@ -57,7 +57,7 @@ jobs:
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           source: "temp.env"
-          target: "/home/${{ env.REMOTE_USER }}/api-gateway-temp.env"
+          target: ${{ env.ENV_PATH }}
 
       - name: 📡 Desplegar y configurar servidor remoto
         uses: appleboy/ssh-action@v1.0.3
