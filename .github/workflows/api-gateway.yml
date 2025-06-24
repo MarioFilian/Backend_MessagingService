@@ -42,42 +42,31 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}
 
-      - name: 🧹 Eliminar posible directorio api-gateway remoto previo y crear carpeta
+      - name: 🧹 Preparar carpeta remota para el despliegue
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.REMOTE_HOST }}
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           script: |
-            sudo rm -rf ${{ env.ENV_DIR }}
-            sudo mkdir -p ${{ env.ENV_DIR }}
+            rm -rf ${{ env.ENV_DIR }}
+            mkdir -p ${{ env.ENV_DIR }}
 
-      - name: 📝 Crear archivo `.env` local temporal
-        run: |
-          echo "HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}" > env.temp
-          echo "HOST_REGISTER=${{ secrets.EC2_HOST_REGISTRATION }}" >> env.temp
-          echo "HOST_VALIDATE=${{ secrets.EC2_HOST_VALIDATE }}" >> env.temp
-          echo "PORT_LOGIN=${{ secrets.PORT_LOGIN }}" >> env.temp
-          echo "PORT_REGISTER=${{ secrets.SERVER_PORT_REGISTRATION }}" >> env.temp
-          echo "PORT_VALIDATE=${{ secrets.SERVER_PORT_VALIDATE }}" >> env.temp
-
-      - name: 📤 Subir archivo `.env` al servidor remoto (directorio)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.REMOTE_HOST }}
-          username: ${{ env.REMOTE_USER }}
-          key: ${{ env.SSH_KEY }}
-          source: env.temp
-          target: ${{ env.ENV_DIR }}/
-
-      - name: 📝 Renombrar archivo a `.env` en servidor remoto
+      - name: 📝 Crear archivo `.env` directamente en el servidor remoto
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.REMOTE_HOST }}
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           script: |
-            mv ${{ env.ENV_DIR }}/env.temp ${{ env.ENV_PATH }}
+            cat <<EOF > ${{ env.ENV_PATH }}
+            HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}
+            HOST_REGISTER=${{ secrets.EC2_HOST_REGISTRATION }}
+            HOST_VALIDATE=${{ secrets.EC2_HOST_VALIDATE }}
+            PORT_LOGIN=${{ secrets.PORT_LOGIN }}
+            PORT_REGISTER=${{ secrets.SERVER_PORT_REGISTRATION }}
+            PORT_VALIDATE=${{ secrets.SERVER_PORT_VALIDATE }}
+            EOF
 
       - name: 📡 Desplegar y configurar servidor remoto
         uses: appleboy/ssh-action@v1.0.3
@@ -127,6 +116,3 @@ jobs:
               $IMAGE_NAME
 
             echo "✅ Despliegue completo."
-
-      - name: 🧽 Limpiar archivo temporal local
-        run: rm -f env.temp
