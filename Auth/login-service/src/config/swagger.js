@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3001/api',
+        url: `http://${EC2_HOST_LOGIN}:${PORT}/auth/`,
       },
     ],
   },
