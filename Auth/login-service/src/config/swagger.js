@@ -1,4 +1,6 @@
 require('dotenv').config();
+const EC2_HOST_LOGIN = process.env.EC2_HOST_LOGIN;
+const PORT = process.env.PORT;
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
