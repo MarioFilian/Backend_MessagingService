@@ -81,7 +81,7 @@ jobs:
                  echo "DB_PORT=${{ secrets.DB_PORT }}" >> /home/ubuntu/login-service.env
                  echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> /home/ubuntu/login-service.env
                  echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/ubuntu/login-service.env
-                 echo "DB_NAME=${{ secrets.DB_NAME }}" >> /home/ubuntu/login-service.env
+                 echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> /home/ubuntu/login-service.env
                  echo "EC2_HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}" >> /home/ubuntu/login-service.env
 
                  # Eliminar imagen vieja
