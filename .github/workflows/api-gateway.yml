@@ -57,12 +57,16 @@ jobs:
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           script: |
-            sudo rm -rf ${{ env.ENV_PATH }}
-
+            if [ -d "${{ env.ENV_PATH }}" ]; then
+              sudo rm -rf ${{ env.ENV_PATH }}
       - name: 📤 Subir archivo `.env` al servidor remoto
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.REMOTE_HOST }}
+          username: ${{ env.REMOTE_USER }}
+          key: ${{ env.SSH_KEY }}
+          source: "env.temp"
+          target: "/home/${{ secrets.EC2_USER }}/api-gateway.env"
           username: ${{ env.REMOTE_USER }}
           key: ${{ env.SSH_KEY }}
           source: "env.temp"
