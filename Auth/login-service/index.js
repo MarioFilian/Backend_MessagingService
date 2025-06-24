@@ -16,5 +16,5 @@ app.use('/auth', authRoutes); // Luego tus rutas reales
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Login service running on port ${PORT}`);
-  console.log(`📄 Swagger docs available at http://localhost:${PORT}/api-docs`);
+  console.log(`📄 Swagger docs available at http://${EC2_HOS_LOGIN}:${PORT}/api-docs`);
 });
