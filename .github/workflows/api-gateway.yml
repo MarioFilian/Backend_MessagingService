@@ -41,15 +41,6 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}
 
-      - name: 📝 Crear archivo `.env` remoto temporal
-        run: |
-          echo "HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}" > env.temp
-          echo "HOST_REGISTER=${{ secrets.EC2_HOST_REGISTRATION }}" >> env.temp
-          echo "HOST_VALIDATE=${{ secrets.EC2_HOST_VALIDATE }}" >> env.temp
-          echo "PORT_LOGIN=${{ secrets.PORT_LOGIN }}" >> env.temp
-          echo "PORT_REGISTER=${{ secrets.SERVER_PORT_REGISTRATION }}" >> env.temp
-          echo "PORT_VALIDATE=${{ secrets.SERVER_PORT_VALIDATE }}" >> env.temp
-
       - name: 🧹 Eliminar posible archivo/directorio api-gateway.env remoto previo
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -58,6 +49,15 @@ jobs:
           key: ${{ env.SSH_KEY }}
           script: |
             sudo rm -rf ${{ env.ENV_PATH }}
+
+      - name: 📝 Crear archivo `.env` remoto temporal
+        run: |
+          echo "HOST_LOGIN=${{ secrets.EC2_HOST_LOGIN }}" > env.temp
+          echo "HOST_REGISTER=${{ secrets.EC2_HOST_REGISTRATION }}" >> env.temp
+          echo "HOST_VALIDATE=${{ secrets.EC2_HOST_VALIDATE }}" >> env.temp
+          echo "PORT_LOGIN=${{ secrets.PORT_LOGIN }}" >> env.temp
+          echo "PORT_REGISTER=${{ secrets.SERVER_PORT_REGISTRATION }}" >> env.temp
+          echo "PORT_VALIDATE=${{ secrets.SERVER_PORT_VALIDATE }}" >> env.temp
 
       - name: 📤 Subir archivo `.env` al servidor remoto
         uses: appleboy/scp-action@v0.1.7
