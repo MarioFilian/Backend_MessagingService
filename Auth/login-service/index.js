@@ -6,7 +6,7 @@ const setupSwagger = require('./src/config/swagger');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 setupSwagger(app); // Primero swagger
