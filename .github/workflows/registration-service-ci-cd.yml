@@ -3,11 +3,13 @@ name: Docker Image CI/CD for Registration Service
 on:
   push:
     paths:
-      - 'registration-service/**'
+      - 'Auth/registration-service/**'
+      - '.github/workflows/registration-service-ci-cd.yml'
     branches: [ "development" ]
   pull_request:
     paths:
-      - 'registration-service/**'
+      - 'Auth/registration-service/**'
+      - '.github/workflows/registration-service-ci-cd.yml'
     branches:
       - "QA"
       - "main"
@@ -18,11 +20,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout del código fuente
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Instalar JDK y Maven
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -37,92 +37,92 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 3. Construir el archivo .jar sin ejecutar pruebas
       - name: Build .jar file (Skip tests)
-        run: mvn clean install -DskipTests -f registration-service/pom.xml
-        env:
-          APP_NAME: ${{ secrets.APP_NAME }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          HIBERNATE_DDL_AUTO: ${{ secrets.HIBERNATE_DDL_AUTO }}
-          SHOW_SQL: ${{ secrets.SHOW_SQL }}
-          HIBERNATE_DIALECT: ${{ secrets.HIBERNATE_DIALECT }}
-          LOGGING_LEVEL_HIBERNATE_SQL: ${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION_MS: ${{ secrets.JWT_EXPIRATION_MS }}
-          CORS_ALLOWED: ${{ secrets.CORS_ALLOWED }}
+        run: mvn clean install -DskipTests -f Auth/registration-service/pom.xml
 
-      # 4. Log in en DockerHub
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 5. Construir y subir la imagen Docker a DockerHub
       - name: Build and push Docker image
         run: |
-          docker build registration-service/. --file registration-service/Dockerfile \
+          docker build Auth/registration-service/. --file Auth/registration-service/Dockerfile \
             --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }} \
             --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }}
           docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
 
-      # 6. Desplegar en EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.6
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST_REGISTRATION }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Instalar Docker si no está presente
+            # Instalar Docker si no está presente (Ubuntu-compatible)
             if ! command -v docker &> /dev/null; then
-              echo "==> Installing Docker"
-              sudo yum update -y
-              sudo yum install -y docker
-              sudo service docker start
-              sudo usermod -a -G docker ec2-user
+              echo "==> Installing Docker on Ubuntu"
+              sudo apt-get update -y
+              sudo apt-get install -y ca-certificates curl gnupg lsb-release
+              sudo mkdir -p /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+                $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              sudo apt-get update -y
+              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+              sudo usermod -aG docker $USER
+              sudo systemctl start docker
             fi
 
-            # Crear archivo .env para variables de entorno
-            echo "APP_NAME=${{ secrets.APP_NAME }}" > /home/ec2-user/registration-service.env
-            echo "SERVER_PORT=${{ secrets.SERVER_PORT }}" >> /home/ec2-user/registration-service.env
-            echo "DB_URL=${{ secrets.DB_URL }}" >> /home/ec2-user/registration-service.env
-            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> /home/ec2-user/registration-service.env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> /home/ec2-user/registration-service.env
-            echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> /home/ec2-user/registration-service.env
-            echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> /home/ec2-user/registration-service.env
-            echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> /home/ec2-user/registration-service.env
-            echo "LOGGING_LEVEL_HIBERNATE_SQL=${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}" >> /home/ec2-user/registration-service.env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/ec2-user/registration-service.env
-            echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" >> /home/ec2-user/registration-service.env
-            echo "CORS_ALLOWED=${{ secrets.CORS_ALLOWED }}" >> /home/ec2-user/registration-service.env
+            # Crear archivo .env temporal
+            ENV_PATH=~/registration-service.env
+            echo "APP_NAME=${{ secrets.APP_NAME }}" > $ENV_PATH
+            echo "SERVER_PORT=${{ secrets.SERVER_PORT }}" >> $ENV_PATH
+            echo "DB_URL=${{ secrets.DB_URL }}" >> $ENV_PATH
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $ENV_PATH
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $ENV_PATH
+            echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> $ENV_PATH
+            echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> $ENV_PATH
+            echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> $ENV_PATH
+            echo "LOGGING_LEVEL_HIBERNATE_SQL=${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}" >> $ENV_PATH
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $ENV_PATH
+            echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" >> $ENV_PATH
+            echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" >> $ENV_PATH
+            echo "CORS_ALLOWED=${{ secrets.CORS_ALLOWED }}" >> $ENV_PATH
+            echo "HOST_REDIS=${{ secrets.HOST_REDIS }}" >> $ENV_PATH
+            echo "PORT_REDIS=${{ secrets.PORT_REDIS }}" >> $ENV_PATH
+            echo "PASS_REDIS=${{ secrets.PASS_REDIS }}" >> $ENV_PATH
 
-            # Descargar imagen Docker más reciente
-            echo "==> Pulling the latest Docker image"
+            # Eliminar imagen vieja
+            sudo docker image prune -f
+
+            # Pull de imagen
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
 
-            # Detener y eliminar contenedor previo
+            # Detener contenedor anterior si existe
             if [ $(sudo docker ps -aq -f name=registration-service) ]; then
               echo "==> Stopping and removing existing container"
               sudo docker stop registration-service
               sudo docker rm registration-service
             fi
 
-            # Ejecutar nuevo contenedor con .env
-            echo "==> Starting a new container"
-            sudo docker run -d --name registration-service -p 80:${{ secrets.SERVER_PORT_REGISTRATION }} \
-              --env-file /home/ec2-user/registration-service.env \
+            # Ejecutar nuevo contenedor
+            echo "==> Starting new container"
+            sudo docker run -d --name registration-service \
+              --env-file $ENV_PATH \
+              -p 3002:${{ secrets.SERVER_PORT_REGISTRATION }} \
+              --restart unless-stopped \
               ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
 
-            # Validar ejecución del contenedor
+            # Verificar contenedor
             if sudo docker ps -f name=registration-service | grep registration-service; then
-              echo "==> Container started successfully"
+              echo "✅ Container started successfully"
+              rm -f $ENV_PATH
             else
-              echo "==> Failed to start the container. Check Docker logs."
+              echo "❌ Failed to start the container"
               exit 1
             fi
