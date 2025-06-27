@@ -69,11 +69,12 @@ jobs:
         run: |
           docker build Auth/validate-service/. \
             --file Auth/validate-service/Dockerfile \
-            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }} \
-            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+            --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }} \
+            --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
 
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
+
 
       - name: 🔐 SSH and Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -103,10 +104,10 @@ jobs:
             fi
 
             echo "🐳 Desplegando contenedor..."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
             sudo docker stop auth-validate-service || true
             sudo docker rm auth-validate-service || true
             sudo docker run -d --name auth-validate-service -p 3004:80 \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+              ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
 
