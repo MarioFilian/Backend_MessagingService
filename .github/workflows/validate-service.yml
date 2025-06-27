@@ -69,11 +69,11 @@ jobs:
         run: |
           docker build . \
             --file Dockerfile \
-            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }} \
-            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+            --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }} \
+            --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
 
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
 
       - name: 🔐 SSH and Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
