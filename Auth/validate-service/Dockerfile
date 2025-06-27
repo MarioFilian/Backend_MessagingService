@@ -22,8 +22,14 @@ WORKDIR /var/www/html
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
+# Crea un archivo .env temporal con valor dummy para JWT_SECRET antes de instalar dependencias
+RUN echo "JWT_SECRET=dummy_secret" > /var/www/html/.env
+
 # Instala dependencias PHP
 RUN composer install --no-interaction --optimize-autoloader
+
+# Opcionalmente elimina el archivo .env temporal para que no quede en la imagen final
+RUN rm /var/www/html/.env
 
 # Exponer el puerto por defecto de Apache
 EXPOSE 80
