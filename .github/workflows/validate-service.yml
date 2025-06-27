@@ -10,7 +10,7 @@ on:
     paths:
       - 'Auth/validate-service/**'
       - '.github/workflows/validate-service.yml'
-  branches: [ "main", "QA" ]
+    branches: [ "main", "QA" ]
 
 jobs:
   ci:
