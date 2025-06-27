@@ -5,12 +5,12 @@ on:
     paths:
       - 'Auth/validate-service/**'
       - '.github/workflows/validate-service.yml'
-    branches:
-      - main
+    branches: [ "development" ]
   pull_request:
     paths:
       - 'Auth/validate-service/**'
       - '.github/workflows/validate-service.yml'
+  branches: [ "main", "QA" ]
 
 jobs:
   ci:
