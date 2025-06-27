@@ -21,17 +21,21 @@ WORKDIR /var/www/html
 # Da permisos adecuados
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Agrega .env temporal para evitar errores con Symfony Runtime
-RUN echo "JWT_SECRET=dummy_secret" > .env
+# 🚨 Agrega .env temporal con todas variables mínimas necesarias
+RUN echo "APP_ENV=dev" > .env && \
+    echo "APP_DEBUG=1" >> .env && \
+    echo "JWT_SECRET=dummy_secret" >> .env
 
-# Instala dependencias (con var de entorno para evitar advertencias como root)
+# Evita advertencias de Composer como root
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-interaction --optimize-autoloader || cat var/log/*.log
 
-# Elimina el .env temporal (opcional)
+# Instala dependencias PHP
+RUN composer install --no-interaction --optimize-autoloader
+
+# Elimina .env temporal
 RUN rm .env || true
 
-# Exponer puerto Apache
+# Exponer el puerto por defecto de Apache
 EXPOSE 80
 
 # Comando por defecto
