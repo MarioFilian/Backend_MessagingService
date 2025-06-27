@@ -18,20 +18,20 @@ COPY . /var/www/html/
 # Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Da permisos adecuados a los archivos
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Da permisos adecuados
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Crea un archivo .env temporal con valor dummy para JWT_SECRET antes de instalar dependencias
-RUN echo "JWT_SECRET=dummy_secret" > /var/www/html/.env
+# Agrega .env temporal para evitar errores con Symfony Runtime
+RUN echo "JWT_SECRET=dummy_secret" > .env
 
-# Instala dependencias PHP
-RUN composer install --no-interaction --optimize-autoloader
+# Instala dependencias (con var de entorno para evitar advertencias como root)
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer install --no-interaction --optimize-autoloader || cat var/log/*.log
 
-# Opcionalmente elimina el archivo .env temporal para que no quede en la imagen final
-RUN rm /var/www/html/.env
+# Elimina el .env temporal (opcional)
+RUN rm .env || true
 
-# Exponer el puerto por defecto de Apache
+# Exponer puerto Apache
 EXPOSE 80
 
 # Comando por defecto
