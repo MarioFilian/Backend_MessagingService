@@ -1,0 +1,106 @@
+name: CI/CD for Validate Service
+
+on:
+  push:
+    paths:
+      - 'Auth/validate-service/**'
+      - '.github/workflows/validate-service.yml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'Auth/validate-service/**'
+      - '.github/workflows/validate-service.yml'
+
+jobs:
+  ci:
+    name: ⚙️ Run CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Auth/validate-service
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, intl, zip
+          tools: composer
+
+      - name: 📦 Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: ✅ Validate composer.json
+        run: composer validate --strict
+
+      - name: 🧪 PHP Syntax Check
+        run: find src/ -type f -name "*.php" -exec php -l {} \;
+
+  cd:
+    name: 🚀 Deploy to EC2
+    needs: ci
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Auth/validate-service
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏗️ Build and push Docker image
+        run: |
+          docker build Auth/validate-service/. \
+            --file Auth/validate-service/Dockerfile \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }} \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:${{ github.run_number }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+
+      - name: 🔐 SSH and Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VALIDATE_SERVICE }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if ! command -v docker &> /dev/null; then
+              echo "🚧 Docker no está instalado. Instalando Docker..."
+              sudo apt-get update
+              sudo apt-get install -y \
+                apt-transport-https \
+                ca-certificates \
+                curl \
+                gnupg-agent \
+                software-properties-common
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+              sudo add-apt-repository \
+                "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+                $(lsb_release -cs) \
+                stable"
+              sudo apt-get update
+              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            else
+              echo "✅ Docker ya está instalado"
+            fi
+
+            echo "🐳 Desplegando contenedor..."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+            sudo docker stop auth-validate-service || true
+            sudo docker rm auth-validate-service || true
+            sudo docker run -d --name auth-validate-service -p 3004:80 \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              ${{ secrets.DOCKERHUB_USERNAME }}/auth-validate-service:latest
+
