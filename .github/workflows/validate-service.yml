@@ -67,10 +67,14 @@ jobs:
 
       - name: 🏗️ Build and push Docker image
         run: |
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
+
           docker build . \
             --file Dockerfile \
             --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }} \
             --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
+
+          rm -f .env
 
           docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }}
           docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
