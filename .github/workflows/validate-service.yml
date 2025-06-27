@@ -13,37 +13,37 @@ on:
     branches: [ "main", "QA" ]
 
 jobs:
-ci:
-  name: ⚙️ Run CI
-  runs-on: ubuntu-latest
-  defaults:
-    run:
-      working-directory: Auth/validate-service
-  steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
+  ci:
+    name: ⚙️ Run CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Auth/validate-service
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-    - name: 📄 Create temporary .env file
-      run: echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
+      - name: 📄 Create temporary .env file
+        run: echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
 
-    - name: 🧰 Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, pdo, pdo_mysql, intl, zip
-        tools: composer
+      - name: 🧰 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, intl, zip
+          tools: composer
 
-    - name: 📦 Install dependencies
-      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: 📦 Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-    - name: ✅ Validate composer.json
-      run: composer validate --strict
+      - name: ✅ Validate composer.json
+        run: composer validate --strict
 
-    - name: 🧪 PHP Syntax Check
-      run: find src/ -type f -name "*.php" -exec php -l {} \;
+      - name: 🧪 PHP Syntax Check
+        run: find src/ -type f -name "*.php" -exec php -l {} \;
 
-    - name: 🧹 Remove temporary .env file
-      run: rm .env
+      - name: 🧹 Remove temporary .env file
+        run: rm .env
 
   cd:
     name: 🚀 Deploy to EC2
