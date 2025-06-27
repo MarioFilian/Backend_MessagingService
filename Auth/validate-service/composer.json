@@ -1,4 +1,6 @@
 {
+    "name": "auth/validate-service",
+    "description": "Service for validating user credentials and generating JWT tokens",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
