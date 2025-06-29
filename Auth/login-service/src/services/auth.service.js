@@ -1,5 +1,5 @@
 const tokenUtil = require('../utils/token');
-const redis = require('../config/redis');
+const { getRedis } = require('../config/redis'); // NO la instancia directa
 const db = require('../config/postgres');
 const bcrypt = require('bcrypt');
 
@@ -21,6 +21,8 @@ const authenticateUser = async (username, password) => {
   const payload = { username: user.username, role: user.role };
   const accessToken = tokenUtil.generateAccessToken(payload);
   const refreshToken = tokenUtil.generateRefreshToken(payload);
+
+  const redis = getRedis();  // obtener instancia activa
 
   await redis.set(refreshToken, user.username);
 
