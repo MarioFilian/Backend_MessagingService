@@ -1,34 +1,34 @@
-# Usa la imagen oficial de Dart como base
+# Etapa de compilación
 FROM dart:stable AS build
 
-# Establece el directorio de trabajo dentro del contenedor
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos de configuración y dependencias
+# Copia archivos de configuración y dependencias
 COPY pubspec.* ./
 
-# Obtiene las dependencias
+# Descarga las dependencias
 RUN dart pub get
 
 # Copia el resto del código fuente
 COPY . .
 
-# Compila el programa para producción (opcional, no obligatorio)
-RUN dart compile exe bin/forgot_password_service.dart -o bin/forgot_password_service.exe
+# Compila el servicio a binario nativo (sin .exe para Linux)
+RUN dart compile exe bin/forgot_password_service.dart -o bin/forgot_password_service
 
-# Etapa final para correr la app en modo runtime mínimo
+# Etapa de ejecución mínima
 FROM scratch
 
-# Copia el runtime de Dart y la aplicación compilada
+# Copia el runtime de Dart y el binario compilado
 COPY --from=build /runtime/ /runtime/
-COPY --from=build /app/bin/forgot_password_service.exe /app/bin/forgot_password_service.exe
+COPY --from=build /app/bin/forgot_password_service /app/bin/forgot_password_service
 COPY --from=build /app/.env /app/.env
 
-# Establece las variables de entorno para usar el runtime Dart mínimo
+# Define el PATH para Dart runtime
 ENV PATH="/runtime/bin:/app/bin:${PATH}"
 
 # Expone el puerto del servicio
 EXPOSE 3005
 
-# Comando para ejecutar el binario compilado
-CMD ["forgot_password_service.exe"]
+# Ejecuta el servicio compilado
+CMD ["forgot_password_service"]
