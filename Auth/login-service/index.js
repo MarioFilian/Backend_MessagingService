@@ -12,6 +12,7 @@ app.use(express.json());
 setupSwagger(app); // Primero swagger
 app.use('/auth', authRoutes); // Luego tus rutas reales
 
+app.get('/auth/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3001;
 const EC2_HOST_LOGIN = process.env.EC2_HOST_LOGIN;
