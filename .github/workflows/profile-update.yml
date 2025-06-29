@@ -77,7 +77,7 @@ jobs:
 
             ENV_PATH=~/profile-update.env
             echo "DB_HOST=${{ secrets.POSTGRES_HOST }}" > $ENV_PATH
-            echo "DB_PORT=${{ secrets.POSTGRES_PORT }}" >> $ENV_PATH
+            echo "DB_PORT=${{ secrets.DB_PORT }}" >> $ENV_PATH
             echo "DB_USER=${{ secrets.POSTGRES_USER }}" >> $ENV_PATH
             echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $ENV_PATH
             echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> $ENV_PATH
