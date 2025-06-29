@@ -40,9 +40,28 @@ jobs:
         run: npm ci
         working-directory: Auth/login-service
 
+      # Crear .env temporal antes del test
+      - name: Create temporary .env file
+        run: |
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" > Auth/login-service/.env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> Auth/login-service/.env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> Auth/login-service/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> Auth/login-service/.env
+          echo "DB_HOST=${{ secrets.POSTGRES_HOST }}" >> Auth/login-service/.env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> Auth/login-service/.env
+          echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> Auth/login-service/.env
+          echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> Auth/login-service/.env
+          echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> Auth/login-service/.env
+
+      # Ejecutar tests
       - name: Run tests
         run: npm test
         working-directory: Auth/login-service
+
+      # Eliminar .env temporal después del test
+      - name: Clean up .env file
+        run: rm Auth/login-service/.env
+
 
   cd:
     name: Continuous Deployment - Build, Push and Deploy
