@@ -1,34 +1,29 @@
 # Etapa de compilación
 FROM dart:stable AS build
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia archivos de configuración y dependencias
 COPY pubspec.* ./
-
-# Descarga las dependencias
 RUN dart pub get
 
-# Copia el resto del código fuente
 COPY . .
-
-# Compila el servicio a binario nativo (sin .exe para Linux)
 RUN dart compile exe bin/forgot_password_service.dart -o bin/forgot_password_service
 
-# Etapa de ejecución mínima
-FROM scratch
+# Etapa final basada en Debian para soporte adecuado de ELF
+FROM debian:bullseye-slim
 
-# Copia el runtime de Dart y el binario compilado
-COPY --from=build /runtime/ /runtime/
-COPY --from=build /app/bin/forgot_password_service /app/bin/forgot_password_service
+# Crea carpeta de la app
+WORKDIR /app
+
+# Copia binario y entorno
+COPY --from=build /app/bin/forgot_password_service /app/forgot_password_service
 COPY --from=build /app/.env /app/.env
 
-# Define el PATH para Dart runtime
-ENV PATH="/runtime/bin:/app/bin:${PATH}"
+# Instala dependencias mínimas necesarias para ejecutar el binario
+RUN apt-get update && apt-get install -y ca-certificates libstdc++6 && apt-get clean
 
-# Expone el puerto del servicio
+# Expone el puerto
 EXPOSE 3005
 
-# Ejecuta el servicio compilado
-CMD ["forgot_password_service"]
+# Ejecuta el binario
+CMD ["./forgot_password_service"]
