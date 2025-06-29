@@ -77,8 +77,8 @@ jobs:
 
             ENV_PATH=~/profile-update.env
             echo "DB_HOST=${{ secrets.POSTGRES_HOST }}" > $ENV_PATH
-            echo "DB_PORT=${{ secrets.DB_PORT }}" >> $ENV_PATH
-            echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> $ENV_PATH
+            echo "DB_PORT=${{ secrets.POSTGRES_PORT }}" >> $ENV_PATH
+            echo "DB_USER=${{ secrets.POSTGRES_USER }}" >> $ENV_PATH
             echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $ENV_PATH
             echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> $ENV_PATH
             echo "PORT=${{ secrets.PORT_PROFILE_UPDATE }}" >> $ENV_PATH
@@ -98,7 +98,7 @@ jobs:
             echo "==> Starting new container"
             sudo docker run -d --name profile-update-service \
               --env-file $ENV_PATH \
-              -p 3009:${{ secrets.PORT_PROFILE_UPDATE }} \
+              -p ${{ secrets.PORT_PROFILE_UPDATE }}:3009 \
               --restart unless-stopped \
               ${{ secrets.DOCKER_USERNAME }}/profile-update-service:latest
 
