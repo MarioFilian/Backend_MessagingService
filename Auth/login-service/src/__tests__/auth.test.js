@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app'); // Requiere que exportes app desde tu main Express (ver paso 0)
+const app = require('../../index'); 
 
 describe('GET /auth/health', () => {
   it('debe responder 200 OK', async () => {
