@@ -68,7 +68,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST_PROFILE_UPDATE }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY2 }}
           script: |
             if ! command -v docker &> /dev/null; then
               echo "🚧 Docker no está instalado. Instalando Docker..."
