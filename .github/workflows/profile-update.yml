@@ -38,6 +38,10 @@ jobs:
           echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> .env
           echo "PORT=${{ secrets.PORT_PROFILE_UPDATE }}" >> .env
+          echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> $ENV_PATH
+          echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> $ENV_PATH
+          echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> $ENV_PATH
+            
 
       - name: 📆 Build with Maven
         run: mvn clean package -DskipTests
@@ -109,6 +113,9 @@ jobs:
             echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             echo "DB_NAME=${{ secrets.POSTGRES_DB }}" >> .env
             echo "PORT=${{ secrets.PORT_PROFILE_UPDATE }}" >> .env
+            echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> $ENV_PATH
+            echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> $ENV_PATH
+            echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> $ENV_PATH
 
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/profile-update-service:latest
             sudo docker stop profile-update-service || true
