@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:dotenv/dotenv.dart';
 import 'package:shelf/shelf.dart';
@@ -72,82 +71,8 @@ Future<void> main() async {
     }
   });
 
-  // POST /forgot-password
-  router.post('/forgot-password', (Request request) async {
-    try {
-      final payload = await request.readAsString();
-      final data = jsonDecode(payload);
-
-      final emailRaw = data['email'];
-      final email = emailRaw is String ? emailRaw.trim() : null;
-
-      if (email == null || email.isEmpty) {
-        return Response(
-          400,
-          body: jsonEncode({'error': 'Email is required'}),
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      final userResult = await db.query(
-        'SELECT id, enabled FROM users WHERE email = @email LIMIT 1',
-        substitutionValues: {'email': email},
-      );
-
-      if (userResult.isEmpty) {
-        return Response(
-          404,
-          body: jsonEncode({'error': 'User not found'}),
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      final userId = userResult.first[0];
-      final enabled = userResult.first[1] as bool? ?? false;
-
-      if (!enabled) {
-        return Response.forbidden(
-          jsonEncode({'error': 'User is disabled'}),
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      final token = _generateToken();
-      final expiresAt = DateTime.now().toUtc().add(const Duration(hours: 1));
-
-      await db.query(
-        'INSERT INTO reset_tokens(token, user_id, expires_at) VALUES (@token, @userId, @expiresAt)',
-        substitutionValues: {
-          'token': token,
-          'userId': userId,
-          'expiresAt': expiresAt,
-        },
-      );
-
-      print('🔐 Generated token for $email: $token');
-
-      return Response.ok(
-        jsonEncode({'message': 'Token generated', 'token': token}),
-        headers: {'content-type': 'application/json'},
-      );
-    } catch (e, stack) {
-      print('❌ Error in /forgot-password: $e\n$stack');
-      return Response.internalServerError(
-        body: jsonEncode({'error': 'Internal Server Error'}),
-        headers: {'content-type': 'application/json'},
-      );
-    }
-  });
-
   final handler = Pipeline().addMiddleware(logRequests()).addHandler(router);
 
   final server = await serve(handler, InternetAddress.anyIPv4, 3008);
   print('🚀 Server running on http://localhost:${server.port}');
-}
-
-String _generateToken([int length = 32]) {
-  const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  final rand = Random.secure();
-  return List.generate(length, (_) => chars[rand.nextInt(chars.length)]).join();
 }
