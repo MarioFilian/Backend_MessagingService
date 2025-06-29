@@ -1,24 +1,29 @@
-# Etapa 1: Construcción del binario
+# Etapa de compilación
 FROM dart:stable AS build
 
 WORKDIR /app
 
-# Copia los archivos necesarios
 COPY pubspec.* ./
 RUN dart pub get
 
 COPY . .
+RUN dart compile exe bin/profile_read_service.dart -o bin/profile_read_service
 
-# Compilar el ejecutable AOT (nativo)
-RUN dart compile exe bin/profile_read_service.dart -o bin/server
+# Etapa final basada en Debian para soporte adecuado de ELF
+FROM debian:bullseye-slim
 
-# Etapa 2: Imagen final para producción
-FROM scratch
+# Crea carpeta de la app
+WORKDIR /app
 
 # Copia binario y entorno
-COPY --from=build /runtime/ /
-COPY --from=build /app/bin/server /app/bin/
-COPY --from=build /app/.env /app/
+COPY --from=build /app/bin/profile_read_service /app/profile_read_service
+COPY --from=build /app/.env /app/.env
 
-# Definir punto de entrada
-ENTRYPOINT ["/app/bin/server"]
+# Instala dependencias mínimas necesarias para ejecutar el binario
+RUN apt-get update && apt-get install -y ca-certificates libstdc++6 && apt-get clean
+
+# Expone el puerto
+EXPOSE 3008
+
+# Ejecuta el binario
+CMD ["./profile_read_service"]
