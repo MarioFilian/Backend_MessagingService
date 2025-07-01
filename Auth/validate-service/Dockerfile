@@ -9,7 +9,11 @@ RUN apt-get update && apt-get install -y \
 # Habilita módulos de Apache necesarios
 RUN a2enmod rewrite
 
-# Instala Composer
+# Cambia DocumentRoot de Apache a /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Copia Composer desde la imagen oficial
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copia los archivos del proyecto
@@ -21,7 +25,7 @@ WORKDIR /var/www/html
 # Da permisos adecuados
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# 🚨 Agrega .env temporal con todas variables mínimas necesarias
+# Crea un archivo .env temporal para Composer y configuración mínima
 RUN echo "APP_ENV=dev" > .env && \
     echo "APP_DEBUG=1" >> .env && \
     echo "JWT_SECRET=dummy_secret" >> .env
@@ -29,14 +33,14 @@ RUN echo "APP_ENV=dev" > .env && \
 # Evita advertencias de Composer como root
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Instala dependencias PHP
+# Instala dependencias PHP con Composer
 RUN composer install --no-interaction --optimize-autoloader
 
-# Elimina .env temporal
+# Borra el archivo .env temporal para no subirlo a producción
 RUN rm .env || true
 
-# Exponer el puerto por defecto de Apache
+# Expone el puerto por defecto de Apache
 EXPOSE 80
 
-# Comando por defecto
+# Comando por defecto para iniciar Apache en primer plano
 CMD ["apache2-foreground"]
