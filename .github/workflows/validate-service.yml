@@ -111,6 +111,8 @@ jobs:
             sudo docker stop auth-validate-service || true
             sudo docker rm auth-validate-service || true
             sudo docker run -d --name auth-validate-service -p ${{ secrets.SERVER_PORT_VALIDATE }}:80 \
+              -e APP_ENV=prod \
+              -e APP_DEBUG=0 \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
 
