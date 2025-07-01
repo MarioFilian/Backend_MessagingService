@@ -32,7 +32,7 @@ void main() async {
 
   // Crear tabla si no existe
   await db.query('''
-    CREATE TABLE reset_tokens (
+    CREATE TABLE IF NOT EXISTS reset_tokens (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
       token TEXT NOT NULL,
