@@ -1,0 +1,9 @@
+# prod-contact-delete.yml
+name: 🚀 Prod · Contact Delete Service
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Contacts/contact-delete-service/**'
+      - '.github/workflows/prod-contact-delete.yml'

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package contact;
+
+option java_multiple_files = true;
+option java_package = "com.example.contact";
+option java_outer_classname = "ContactProto";
+
+service ContactService {
+  rpc GetContactsByName (ContactNameRequest) returns (ContactListResponse);
+}
+
+message ContactNameRequest {
+  string name = 1;
+}
+
+message Contact {
+  string element_id = 1;  // Usamos elementId de Neo4j
+  string name = 2;
+  string phone = 3;
+}
+
+message ContactListResponse {
+  repeated Contact contacts = 1;
+}

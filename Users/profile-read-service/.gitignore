@@ -1,0 +1,84 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+
+.dart_tool/
+.packages
+.pub/
+.env
+
+# Environment files
+.env
+.env.*
+
+# Logs
+logs
+*.log
+*.out
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Build output
+dist/
+build/
+coverage/
+tmp/
+temp/
+
+# Test output
+*.lcov
+
+# Misc
+*.tgz
+*.swp
+*.bak
+
+# Dependency directories
+jspm_packages/
+bower_components/
+
+# TypeScript
+*.tsbuildinfo
+
+# PM2
+pids
+*.pid
+*.seed
+
+# Docker
+docker-compose.override.yml
+
+# Prisma
+prisma/migrations/
+
+# Next.js
+.next/
+
+# SvelteKit
+.svelte-kit/
+
+# Nuxt.js
+.nuxt/
+
+# Firebase
+.firebase/
+
+# VSCode settings
+.history/
+
+# Local env
+local.env

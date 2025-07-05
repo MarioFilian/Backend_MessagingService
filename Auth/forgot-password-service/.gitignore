@@ -1,0 +1,23 @@
+# Dart/Pub related
+.dart_tool/
+.packages
+.pub/
+build/
+pubspec.lock
+
+# IDEs
+.idea/
+.vscode/
+
+# Environment variables file
+.env
+
+# Executables and snapshots
+*.exe
+*.dll
+*.so
+*.dylib
+*.snapshot
+
+# Logs
+*.log

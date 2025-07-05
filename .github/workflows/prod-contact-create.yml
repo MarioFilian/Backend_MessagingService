@@ -1,0 +1,9 @@
+# prod-contact-create.yml
+name: 🚀 Prod · Contact Create Service
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Contacts/contact-create-service/**'
+      - '.github/workflows/prod-contact-create.yml'

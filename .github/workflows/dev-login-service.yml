@@ -1,0 +1,121 @@
+# dev-login-service.yml
+name: 🔧 Dev · Login Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Auth/login-service/**'
+      - '.github/workflows/dev-login-service.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Auth/login-service/**'
+      - '.github/workflows/dev-login-service.yml'
+
+jobs:
+  ci:
+    name: Continuous Integration - Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: Auth/login-service
+
+      - name: Run tests
+        run: npm test
+        working-directory: Auth/login-service
+
+  cd:
+    name: Continuous Deployment - Build, Push & Deploy
+    runs-on: ubuntu-latest
+    needs: ci
+    if: success()
+
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/login-service:latest
+      CONTAINER_NAME: login-service
+      REMOTE_HOST: ${{ secrets.EC2_HOST_LOGIN }}
+      REMOTE_USER: ${{ secrets.EC2_USER }}
+      SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (production mode)
+        run: npm ci --omit=dev
+        working-directory: Auth/login-service
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build Auth/login-service/. --file Auth/login-service/Dockerfile \
+            --tag $IMAGE_NAME
+          docker push $IMAGE_NAME
+
+      - name: Deploy to EC2 without creating .env file
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          username: ${{ env.REMOTE_USER }}
+          key: ${{ env.SSH_KEY }}
+          script: |
+            set -e
+
+            CONTAINER_NAME="login-service"
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/login-service:latest"
+
+            echo "Checking Docker installation..."
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+            fi
+
+            echo "Cleaning old containers and images..."
+            sudo docker stop $CONTAINER_NAME || true
+            sudo docker rm $CONTAINER_NAME || true
+            sudo docker image prune -f
+
+            echo "Pulling latest Docker image..."
+            sudo docker pull $IMAGE_NAME
+
+            echo "Running new container with env vars injected directly..."
+            sudo docker run -d --name $CONTAINER_NAME \
+              -p ${{ secrets.PORT_LOGIN }}:${{ secrets.PORT_LOGIN }} \
+              -e PORT=${{ secrets.PORT_LOGIN }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+              -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              -e DB_HOST=${{ secrets.POSTGRES_HOST }} \
+              -e DB_PORT=${{ secrets.DB_PORT }} \
+              -e DB_USERNAME=${{ secrets.POSTGRES_USER }} \
+              -e DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e DB_NAME=${{ secrets.POSTGRES_DB }} \
+              --restart unless-stopped \
+              $IMAGE_NAME
+
+            echo "✅ Deployment finished successfully."

@@ -1,0 +1,6 @@
+fastapi
+strawberry-graphql
+uvicorn
+python-dotenv
+redis
+pyjwt
