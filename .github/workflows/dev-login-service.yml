@@ -36,9 +36,6 @@ jobs:
         run: npm test
         working-directory: Auth/login-service
 
-      - name: Clean up temporary .env file
-        run: rm -f Auth/login-service/.env
-
   cd:
     name: Continuous Deployment - Build, Push & Deploy
     runs-on: ubuntu-latest
@@ -86,6 +83,9 @@ jobs:
           script: |
             set -e
 
+            CONTAINER_NAME="login-service"
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/login-service:latest"
+
             echo "Checking Docker installation..."
             if ! command -v docker &> /dev/null; then
               echo "Installing Docker..."
@@ -104,7 +104,7 @@ jobs:
 
             echo "Running new container with env vars injected directly..."
             sudo docker run -d --name $CONTAINER_NAME \
-              -p 3001:${{ secrets.PORT_LOGIN }} \
+              -p ${{ secrets.PORT_LOGIN }}:${{ secrets.PORT_LOGIN }} \
               -e PORT=${{ secrets.PORT_LOGIN }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
@@ -118,4 +118,4 @@ jobs:
               --restart unless-stopped \
               $IMAGE_NAME
 
-            echo "Deployment finished successfully."
+            echo "✅ Deployment finished successfully."
