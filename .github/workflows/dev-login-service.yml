@@ -32,21 +32,6 @@ jobs:
         run: npm ci
         working-directory: Auth/login-service
 
-      - name: Create temporary .env file for tests
-        run: |
-          cat <<EOF > Auth/login-service/.env
-          JWT_SECRET=${{ secrets.LOGIN_SERVICE_JWT_SECRET_DEV_QA }}
-          REDIS_HOST=${{ secrets.LOGIN_SERVICE_REDIS_HOST_DEV_QA }}
-          REDIS_PORT=${{ secrets.LOGIN_SERVICE_REDIS_PORT_DEV_QA }}
-          REDIS_PASSWORD=${{ secrets.LOGIN_SERVICE_REDIS_PASSWORD_DEV_QA }}
-          DB_HOST=${{ secrets.LOGIN_SERVICE_DB_HOST_DEV_QA }}
-          DB_PORT=${{ secrets.LOGIN_SERVICE_DB_PORT_DEV_QA }}
-          DB_USERNAME=${{ secrets.LOGIN_SERVICE_DB_USERNAME_DEV_QA }}
-          DB_PASSWORD=${{ secrets.LOGIN_SERVICE_DB_PASSWORD_DEV_QA }}
-          DB_NAME=${{ secrets.LOGIN_SERVICE_DB_NAME_DEV_QA }}
-          PORT=${{ secrets.LOGIN_SERVICE_PORT_DEV_QA }}
-          EOF
-
       - name: Run tests
         run: npm test
         working-directory: Auth/login-service
@@ -63,9 +48,9 @@ jobs:
     env:
       IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/login-service:latest
       CONTAINER_NAME: login-service
-      REMOTE_HOST: ${{ secrets.LOGIN_SERVICE_EC2_HOST_DEV_QA }}
-      REMOTE_USER: ${{ secrets.LOGIN_SERVICE_EC2_USER_DEV_QA }}
-      SSH_KEY: ${{ secrets.LOGIN_SERVICE_EC2_SSH_KEY_DEV_QA }}
+      REMOTE_HOST: ${{ secrets.EC2_HOST_LOGIN }}
+      REMOTE_USER: ${{ secrets.EC2_USER }}
+      SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
     steps:
       - name: Checkout code
@@ -119,17 +104,17 @@ jobs:
 
             echo "Running new container with env vars injected directly..."
             sudo docker run -d --name $CONTAINER_NAME \
-              -p 3001:${{ secrets.LOGIN_SERVICE_PORT_DEV_QA }} \
-              -e PORT=${{ secrets.LOGIN_SERVICE_PORT_DEV_QA }} \
-              -e JWT_SECRET=${{ secrets.LOGIN_SERVICE_JWT_SECRET_DEV_QA }} \
-              -e REDIS_HOST=${{ secrets.LOGIN_SERVICE_REDIS_HOST_DEV_QA }} \
-              -e REDIS_PORT=${{ secrets.LOGIN_SERVICE_REDIS_PORT_DEV_QA }} \
-              -e REDIS_PASSWORD=${{ secrets.LOGIN_SERVICE_REDIS_PASSWORD_DEV_QA }} \
-              -e DB_HOST=${{ secrets.LOGIN_SERVICE_DB_HOST_DEV_QA }} \
-              -e DB_PORT=${{ secrets.LOGIN_SERVICE_DB_PORT_DEV_QA }} \
-              -e DB_USERNAME=${{ secrets.LOGIN_SERVICE_DB_USERNAME_DEV_QA }} \
-              -e DB_PASSWORD=${{ secrets.LOGIN_SERVICE_DB_PASSWORD_DEV_QA }} \
-              -e DB_NAME=${{ secrets.LOGIN_SERVICE_DB_NAME_DEV_QA }} \
+              -p 3001:${{ secrets.PORT_LOGIN }} \
+              -e PORT=${{ secrets.PORT_LOGIN }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+              -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              -e DB_HOST=${{ secrets.POSTGRES_HOST }} \
+              -e DB_PORT=${{ secrets.DB_PORT }} \
+              -e DB_USERNAME=${{ secrets.POSTGRES_USER }} \
+              -e DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e DB_NAME=${{ secrets.POSTGRES_DB }} \
               --restart unless-stopped \
               $IMAGE_NAME
 
