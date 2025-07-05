@@ -1,20 +1,20 @@
-# Usamos una imagen oficial de Node.js (versión LTS)
+# Usa una imagen oficial de Node.js (versión LTS)
 FROM node:18-alpine
 
 # Directorio de trabajo en el contenedor
 WORKDIR /usr/src/app
 
-# Copiamos package.json y package-lock.json para instalar dependencias
+# Copiamos primero las dependencias para aprovechar el cache de Docker
 COPY package.json package-lock.json ./
 
-# Instalamos las dependencias
-RUN npm ci --only=production
+# Instalamos solo dependencias necesarias en producción
+RUN npm ci --omit=dev
 
-# Copiamos el resto del código (server.js y demás)
-COPY server.js ./
+# Copiamos el resto del proyecto (rutas, middlewares, config, etc.)
+COPY . .
 
-# Exponemos el puerto 3000 (asumiendo que el gateway corre ahí)
+# Exponemos el puerto donde corre el API Gateway
 EXPOSE 3000
 
-# Comando para arrancar la app
+# Comando para iniciar la aplicación
 CMD ["node", "server.js"]
