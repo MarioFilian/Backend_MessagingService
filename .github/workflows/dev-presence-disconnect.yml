@@ -1,0 +1,15 @@
+# dev-presence-disconnect.yml
+name: 🔧 Dev · Presence Disconnect Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Connection/presence-disconnect-service/**'
+      - '.github/workflows/dev-presence-disconnect.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Connection/presence-disconnect-service/**'
+      - '.github/workflows/dev-presence-disconnect.yml'

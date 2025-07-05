@@ -1,0 +1,9 @@
+# prod-presence-connect.yml
+name: 🚀 Prod · Presence Connect Service
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Connection/presence-connect-service/**'
+      - '.github/workflows/prod-presence-connect.yml'

@@ -1,16 +1,12 @@
-name: CI/CD for Validate Service
+# prod-validate-service.yml
+name: 🚀 Prod · Validate Service
 
 on:
-  push:
-    paths:
-      - 'Auth/validate-service/**'
-      - '.github/workflows/validate-service.yml'
-    branches: [ "development" ]
   pull_request:
+    branches: [ "main" ]
     paths:
       - 'Auth/validate-service/**'
-      - '.github/workflows/validate-service.yml'
-    branches: [ "main", "QA" ]
+      - '.github/workflows/prod-validate-service.yml'
 
 jobs:
   ci:

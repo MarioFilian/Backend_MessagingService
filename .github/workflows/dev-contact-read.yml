@@ -1,0 +1,15 @@
+# dev-contact-read.yml
+name: 🔧 Dev · Contact Read Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Contacts/contact-read-service/**'
+      - '.github/workflows/dev-contact-read.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Contacts/contact-read-service/**'
+      - '.github/workflows/dev-contact-read.yml'

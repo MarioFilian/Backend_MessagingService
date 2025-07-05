@@ -1,17 +1,19 @@
-name: Deploy PostgreSQL
+# dev-postgresql.yml
+name: 🧪 Dev · PostgreSQL
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'DB/PostgreSQL/docker-compose.yml'
-      - '.github/workflows/postgresql.yml'
-
   push:
-    branches: [QA, development]
+    branches: [ "development" ]
     paths:
-      - 'DB/PostgreSQL/docker-compose.yml'
-      - '.github/workflows/postgresql.yml'
+      - 'DB/PostgreSQL/**'
+      - '.github/workflows/dev-postgresql.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'DB/PostgreSQL/**'
+      - '.github/workflows/dev-postgresql.yml'
+
 
 jobs:
   deploy:

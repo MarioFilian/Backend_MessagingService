@@ -1,19 +1,12 @@
-name: Deploy MongoDB
+# prod-mongodb.yml
+name: 📦 Prod · MongoDB
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
     paths:
-      - 'DB/MongoDB/docker-compose.yml'
-      - 'DB/MongoDB/init-mongo.template.js'
-      - '.github/workflows/mongodb.yml'
-
-  push:
-    branches: [QA, development]
-    paths:
-      - 'DB/MongoDB/docker-compose.yml'
-      - 'DB/MongoDB/init-mongo.template.js'
-      - '.github/workflows/mongodb.yml'
+      - 'DB/MongoDB/**'
+      - '.github/workflows/prod-mongodb.yml'
 
 jobs:
   deploy:

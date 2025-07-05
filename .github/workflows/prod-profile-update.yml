@@ -1,16 +1,12 @@
-name: CI/CD for Profile Update Service
+# prod-profile-update.yml
+name: 🚀 Prod · Profile Update Service
 
 on:
-  push:
-    paths:
-      - 'Users/profile-update-service/**'
-      - '.github/workflows/profile-update.yml'
-    branches: ['development']
   pull_request:
+    branches: [ "main" ]
     paths:
       - 'Users/profile-update-service/**'
-      - '.github/workflows/profile-update.yml'
-    branches: ['QA', 'main']
+      - '.github/workflows/prod-profile-update.yml'
 
 jobs:
   build-and-deploy:

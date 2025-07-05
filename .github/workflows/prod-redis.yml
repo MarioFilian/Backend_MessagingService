@@ -1,17 +1,13 @@
-name: Deploy Redis
+# prod-redis.yml
+name: 📦 Prod · Redis
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
     paths:
-      - 'DB/Redis/docker-compose.yml'
-      - '.github/workflows/redis.yml'
+      - 'DB/Redis/**'
+      - '.github/workflows/prod-redis.yml'
 
-  push:
-    branches: [QA, development]
-    paths:
-      - 'DB/Redis/docker-compose.yml'
-      - '.github/workflows/redis.yml'
 
 jobs:
   deploy:

@@ -1,0 +1,9 @@
+# prod-contact-read-name.yml
+name: 🚀 Prod · Contact Read Name Service
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Contacts/contact-read-name-service/**'
+      - '.github/workflows/prod-contact-read-name.yml'

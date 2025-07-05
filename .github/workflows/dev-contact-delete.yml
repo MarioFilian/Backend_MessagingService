@@ -1,0 +1,15 @@
+# dev-contact-delete.yml
+name: 🔧 Dev · Contact Delete Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Contacts/contact-delete-service/**'
+      - '.github/workflows/dev-contact-delete.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Contacts/contact-delete-service/**'
+      - '.github/workflows/dev-contact-delete.yml'

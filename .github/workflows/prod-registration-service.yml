@@ -1,18 +1,12 @@
-name: Docker Image CI/CD for Registration Service
+# prod-registration-service.yml
+name: 🚀 Prod · Registration Service
 
 on:
-  push:
-    paths:
-      - 'Auth/registration-service/**'
-      - '.github/workflows/registration-service-ci-cd.yml'
-    branches: [ "development" ]
   pull_request:
+    branches: [ "main" ]
     paths:
       - 'Auth/registration-service/**'
-      - '.github/workflows/registration-service-ci-cd.yml'
-    branches:
-      - "QA"
-      - "main"
+      - '.github/workflows/prod-registration-service.yml'
 
 jobs:
   build-and-deploy:
