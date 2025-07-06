@@ -36,8 +36,14 @@ jobs:
           extensions: mbstring, pdo, pdo_mysql, intl, zip
           tools: composer
 
+      - name: 🔧 Create minimal .env file
+        run: echo "APP_ENV=prod" > .env
+
       - name: 📦 Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: 🧹 Remove .env file
+        run: rm -f .env
 
       - name: ✅ Validate composer.json
         run: composer validate --strict
