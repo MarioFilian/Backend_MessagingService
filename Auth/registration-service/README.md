@@ -1,158 +1,155 @@
-# 📝 Registration Service
+# 📝 Registration Service · Auth Microservice
 
-Backend service for user registration, credential management, and initial JWT token generation. Built with Spring Boot and PostgreSQL.
-
----
-
-## 🚀 Features
-
-* ✅ User registration with validation
-* 🔒 Secure password hashing
-* 🎟️ JWT token generation upon registration
-* 🌐 Dynamic CORS configuration
-* 📖 Swagger/OpenAPI documentation
-* 🔐 Basic Spring Security configuration with public and protected endpoints
+This microservice handles user registration, JWT token generation (access & refresh), and stores refresh tokens securely in Redis. It is part of a larger authentication architecture for a messaging application.
 
 ---
 
-## 🛠️ Technologies
+## 🚀 Tech Stack
 
-* Java 17+
-* Spring Boot 3.x
-* Spring Security
-* Spring Data JPA
-* PostgreSQL
-* JWT (JSON Web Tokens)
-* Maven
-* Swagger (OpenAPI)
-
----
-
-## ⚙️ Environment Variables (`.env`)
-
-You must set the following variables to run the application correctly:
-
-| Variable                      | Description                                            | Example                                                                                    |
-| ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `APP_NAME`                    | Name of the app/service                                | registration-service                                                                       |
-| `SERVER_PORT`                 | Backend listening port                                 | 3002                                                                                       |
-| `DB_URL`                      | PostgreSQL connection URL                              | jdbc\:postgresql://localhost:5432/registrationdb                                           |
-| `DB_USERNAME`                 | PostgreSQL database username                           | postgres                                                                                   |
-| `DB_PASSWORD`                 | PostgreSQL database password                           | example                                                                                    |
-| `HIBERNATE_DDL_AUTO`          | Hibernate schema generation strategy (validate/update) | update                                                                                     |
-| `SHOW_SQL`                    | Show SQL queries in console (`true` or `false`)        | true                                                                                       |
-| `HIBERNATE_DIALECT`           | Hibernate dialect class for PostgreSQL                 | org.hibernate.dialect.PostgreSQLDialect                                                    |
-| `LOGGING_LEVEL_HIBERNATE_SQL` | Log level for Hibernate SQL statements                 | DEBUG                                                                                      |
-| `JWT_SECRET`                  | Secret key for signing JWT tokens                      | your\_jwt\_secret\_here                                                                    |
-| `JWT_EXPIRATION_MS`           | JWT token expiration time in milliseconds              | 3600000                                                                                    |
-| `CORS_ALLOWED`                | Allowed CORS origins (comma-separated)                 | [http://localhost:3000,http://localhost:3002](http://localhost:3000,http://localhost:3002) |
+- 🧬 **Java 21**
+- 🌱 **Spring Boot 3.x**
+- 🔐 **Spring Security**
+- 🧪 **JUnit 5** + **MockMvc**
+- 🧰 **Maven**
+- 🧠 **Redis** (with Lettuce)
+- 🐘 **PostgreSQL**
+- 🔐 **JWT (JJWT)**
+- 🧼 **Lombok**
+- 📦 **Docker**
+- 📑 **OpenAPI / Swagger 3**
 
 ---
 
-## 💻 Local Setup
+## 📦 Features
 
-1. Clone the repo:
+- ✅ Register users with email & username validation
+- 🔒 Hash passwords using BCrypt
+- 🔐 Generate JWT access and refresh tokens
+- 🧠 Store refresh tokens in Redis (7-day expiry)
+- 🔁 Stateless Authentication (JWT-based)
+- 🧪 Includes unit tests (`/health`, etc.)
+- 📄 Swagger API docs at `/swagger-ui.html`
+- 🔁 Dockerized for CI/CD & deployment
 
-```bash
-git clone https://github.com/your_username/registration-service.git
-cd registration-service
+---
+
+
+## 📁 Project Structure
+
 ```
 
-2. Create a `.env` file with the variables listed above.
+Auth/
+└── registration-service/
+├── src/
+│   ├── main/
+│   │   ├── java/com/projectfinal/registrationservice/
+│   │   │   ├── config/
+│   │   │   ├── controller/
+│   │   │   ├── dto/
+│   │   │   ├── entity/
+│   │   │   ├── repository/
+│   │   │   ├── service/
+│   │   │   └── util/
+│   └── test/java/com/projectfinal/registrationservice/
+│       └── HealthControllerTest.java
+├── Dockerfile
+└── README.md
 
-3. Build without tests:
+````
 
-```bash
-mvn clean install -DskipTests
-```
 
-4. Run the service:
+## 🌐 REST API Endpoints
 
-```bash
-mvn spring-boot:run
-```
+| Method | Endpoint             | Description                       | Auth |
+|--------|----------------------|-----------------------------------|------|
+| GET    | `/health`            | Simple health check               | ❌ No |
+| POST   | `/api/register`      | Register new users & return JWTs  | ❌ No |
 
-Service will start on the configured `SERVER_PORT`.
+### ✅ Swagger available at:
+[http://localhost:3002/swagger-ui.html](http://localhost:3002/swagger-ui.html)
 
----
-
-## 📬 API Usage
-
-### Register User
-
-* **Endpoint:** `POST /api/register`
-* **Sample JSON payload:**
-
-```json
-{
-  "username": "mario123",
-  "password": "P@ssw0rd123",
-  "email": "mario@example.com",
-  "firstName": "Mario",
-  "lastName": "Perez",
-  "role": "USER"
-}
-```
-
-* **Response:**
-  A JWT token string
 
 ---
 
-## 📚 Swagger Documentation
+## 🛠 Environment Variables (.env)
 
-Access API docs at:
+These must be provided as environment variables or secrets:
 
-```
-http://localhost:{SERVER_PORT}/swagger-ui/index.html
-```
-
----
-
-## 🌐 CORS Configuration
-
-Allowed origins are configured dynamically through `CORS_ALLOWED` environment variable. Use comma-separated URLs.
-
----
-
-## 🔒 Security
-
-* Registration endpoint is public.
-* Other endpoints require JWT authentication.
-* Stateless session management.
+| Key                        | Description                            |
+|---------------------------|----------------------------------------|
+| `APP_NAME`                | Application name                       |
+| `SERVER_PORT`             | Port Spring Boot runs on               |
+| `DB_HOST`                 | PostgreSQL host                        |
+| `DB_PORT`                 | PostgreSQL port                        |
+| `DB_NAME`                 | PostgreSQL database name               |
+| `DB_USERNAME`             | PostgreSQL username                    |
+| `DB_PASSWORD`             | PostgreSQL password                    |
+| `HIBERNATE_DDL_AUTO`      | e.g., `update`, `create-drop`, etc.   |
+| `SHOW_SQL`                | Whether to log SQL statements          |
+| `HIBERNATE_DIALECT`       | e.g., `PostgreSQLDialect`             |
+| `LOGGING_LEVEL_HIBERNATE_SQL` | Logging level for SQL logs         |
+| `JWT_SECRET`              | Base64-encoded JWT secret              |
+| `JWT_EXPIRATION_MS`       | Access token expiry (e.g. `900000`)   |
+| `JWT_REFRESH_EXPIRATION_MS` | Refresh token expiry (e.g. `604800000`) |
+| `CORS_ALLOWED`            | Allowed CORS origins (e.g. `*`)        |
+| `HOST_REDIS`              | Redis host                             |
+| `PORT_REDIS`              | Redis port                             |
+| `PASS_REDIS`              | Redis password                         |
 
 ---
 
 ## 🧪 Testing
 
-* Use Postman or similar tool.
-* Send POST request to `/api/register` with JSON payload.
-* Receive JWT token for authenticated requests.
+We use **JUnit + MockMvc**. Sample test:
 
----
+```java
+mockMvc.perform(get("/health"))
+       .andExpect(status().isOk())
+       .andExpect(content().string("ok"));
+````
 
-## 🐳 Docker & Deployment
-
-Build Docker image:
-
-```bash
-docker build -t your_dockerhub_username/registration-service:latest .
-```
-
-Run Docker container:
+To run tests locally:
 
 ```bash
-docker run -d -p 3002:3002 --env-file .env your_dockerhub_username/registration-service:latest
+mvn test
+```
+
+### GitHub Actions (CI/CD)
+
+* ✅ CI: Runs tests on every `push` to `development`
+* 🚀 CD: Builds & deploys Docker image to EC2 if tests pass
+
+---
+
+## 🐳 Docker
+
+**Dockerfile** is multi-stage and production-ready. Build and run:
+
+```bash
+docker build -t registration-service .
+docker run -p 3002:3002 --env-file .env registration-service
 ```
 
 ---
 
-## 🤝 Contributing
+## 📂 Project Structure
 
-Contributions, suggestions, and bug reports are welcome! Please open issues or PRs.
+```
+registration-service/
+├── config/             # CORS, Redis, Security, Swagger
+├── controller/         # Health & Registration
+├── dto/                # Request & response models
+├── entity/             # JPA entities
+├── repository/         # Spring Data interfaces
+├── service/            # Business logic
+├── util/               # JWT helper
+├── test/               # Unit tests
+└── Dockerfile
+```
 
 ---
 
-## 📄 License
 
-MIT License (or your license)
+## 📜 License
+
+MIT — feel free to use it for your own messaging microservices! ✨
