@@ -92,7 +92,7 @@ jobs:
           key: ${{ secrets.EC2_KEY_BD }}
           envs: REDIS_PASSWORD,REDIS_PORT
           script: |
-            cd /home/${{ secrets.EC2_USER }}/redis2-deploy/DB/Redis
+            cd /home/${{ secrets.EC2_USER }}/redis2-deploy/DB/Redis2
 
             # Limpiar contenedores previos
             CONTAINERS=$(sudo docker ps -a --filter "name=redis-container2" -q)
