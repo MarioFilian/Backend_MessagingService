@@ -115,6 +115,7 @@ jobs:
               -e DB_USERNAME=${{ secrets.USER_POSTGRES }} \
               -e DB_PASSWORD=${{ secrets.PASS_DB }} \
               -e DB_NAME=${{ secrets.DB_POSTGRES }} \
+              -e EC2_HOST_LOGIN=${{ env.REMOTE_HOST }} \
               --restart unless-stopped \
               $IMAGE_NAME
 
