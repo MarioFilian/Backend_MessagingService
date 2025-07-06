@@ -15,8 +15,14 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . /var/www/html/
 WORKDIR /var/www/html
 
+# Crea un .env temporal para evitar error en composer
+RUN echo "APP_ENV=prod" > .env
+
 # Instala dependencias PHP
 RUN composer install --no-interaction --optimize-autoloader
+
+# Borra el .env temporal para que no quede en producción
+RUN rm .env
 
 # Establece permisos correctos
 RUN chown -R www-data:www-data /var/www/html
