@@ -3,10 +3,10 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
-const { PORT } = require('./config/env');
-const logger = require('./middlewares/logger');
-const createServiceProxy = require('./middlewares/proxyFactory');
-const routes = require('./routes/proxyRoutes');
+const { PORT } = require('./src/config/env');
+const logger = require('./src/middlewares/logger');
+const createServiceProxy = require('./src/middlewares/proxyFactory');
+const routes = require('./src/routes/proxyRoutes');
 
 const app = express();
 

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { HOST_VALIDATE, PORT_VALIDATE } = require('../config/env');
+const { PORT_VALIDATE, HOST_AUTH } = require('../config/env');
 
 const validateAccessToken = async (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -9,7 +9,7 @@ const validateAccessToken = async (req, res, next) => {
 
   try {
     const response = await axios.post(
-      `http://${HOST_VALIDATE}:${PORT_VALIDATE}/validate/access`,
+      `http://${HOST_AUTH}:${PORT_VALIDATE}/validate/access`,
       { accessToken: token }
     );
 
