@@ -1,0 +1,87 @@
+# .github/workflows/dev-postgresql2.yml
+name: 🧪 Dev · PostgreSQL 2
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'DB/PostgreSQL2/**'
+      - '.github/workflows/dev-postgresql2.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'DB/PostgreSQL2/**'
+      - '.github/workflows/dev-postgresql2.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_USER: ${{ secrets.USER_POSTGRES }}
+      POSTGRES_PASSWORD: ${{ secrets.PASS_DB }}
+      POSTGRES_DB: ${{ secrets.DB_POSTGRES2 }}
+      POSTGRES_PORT: ${{ secrets.PORT_POSTGRES2 }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Ensure target directory exists on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: |
+            mkdir -p /home/${{ secrets.EC2_USER }}/postgres2-deploy
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          source: "DB/PostgreSQL2/docker-compose.yml"
+          target: /home/${{ secrets.EC2_USER }}/postgres2-deploy
+          debug: true
+
+      - name: Clean old containers and volumes on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/postgres2-deploy
+            sudo docker-compose down --volumes --remove-orphans || true
+            sudo docker system prune -af --volumes || true
+
+      - name: SSH into EC2 and deploy PostgreSQL 2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_PORT
+          script: |
+            sudo apt update
+            sudo apt install -y docker.io docker-compose
+            cd /home/${{ secrets.EC2_USER }}/postgres2-deploy/DB/PostgreSQL2
+            POSTGRES_USER=$POSTGRES_USER \
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+            POSTGRES_DB=$POSTGRES_DB \
+            POSTGRES_PORT=$POSTGRES_PORT \
+            sudo -E docker-compose up -d
+
+      - name: 🔍 Verify PostgreSQL 2 container status
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: |
+            echo "🧪 Verifying PostgreSQL 2 container status..."
+            sudo docker ps --filter "name=postgresql"
+            echo "✅ If the container appears above, PostgreSQL 2 is running."
