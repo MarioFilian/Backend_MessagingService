@@ -7,7 +7,6 @@ on:
     paths:
       - 'Auth/registration-service/**'
       - '.github/workflows/dev-registration-service.yml'
-
   pull_request:
     branches: ["QA"]
     paths:
@@ -43,7 +42,7 @@ jobs:
       - name: 📦 Checkout code
         uses: actions/checkout@v4
 
-      - name: ☕ Setup Java
+      - name: ☕ Setup Java 21 (Temurin)
         uses: actions/setup-java@v3
         with:
           java-version: '21'
@@ -99,14 +98,18 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.run_number }}
             ${{ env.IMAGE_NAME }}:latest
 
-      - name: 🚀 SSH & Deploy
+      - name: 🚀 SSH & Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_AUTH_DEV }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY_BD }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
           script: |
             set -e
+
             IMAGE=${{ secrets.DOCKER_USERNAME }}/registration-service:latest
             CONTAINER=registration-service
 
