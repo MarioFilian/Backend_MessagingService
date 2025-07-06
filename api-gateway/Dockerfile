@@ -16,5 +16,5 @@ COPY . .
 # Exponemos el puerto donde corre el API Gateway
 EXPOSE 3000
 
-# Comando para iniciar la aplicación
-CMD ["node", "server.js"]
+# Comando para iniciar la aplicación (index.js, no server.js)
+CMD ["node", "index.js"]
