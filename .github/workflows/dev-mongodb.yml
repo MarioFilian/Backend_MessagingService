@@ -92,7 +92,7 @@ jobs:
             cd /home/${{ secrets.EC2_USER }}/mongo-deploy/DB/MongoDB
             
             # Buscar contenedores existentes con 'mongo' en el nombre
-            CONTAINERS=$(sudo docker ps -a --filter "name=mongo" -q)
+            CONTAINERS=$(sudo docker ps -a --filter "name=my-mongo-db" -q)
             if [ -n "$CONTAINERS" ]; then
               echo "🧹 Deteniendo contenedores mongo existentes..."
               sudo docker stop $CONTAINERS || true

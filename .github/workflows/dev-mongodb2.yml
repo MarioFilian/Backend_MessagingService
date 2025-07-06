@@ -91,7 +91,7 @@ jobs:
           script: |
             cd /home/${{ secrets.EC2_USER }}/mongo2-deploy/DB/MongoDB2
 
-            CONTAINERS=$(sudo docker ps -a --filter "name=mongo" -q)
+            CONTAINERS=$(sudo docker ps -a --filter "name=my-mongo-db2" -q)
             if [ -n "$CONTAINERS" ]; then
               echo "🧹 Deteniendo contenedores mongo existentes..."
               sudo docker stop $CONTAINERS || true
