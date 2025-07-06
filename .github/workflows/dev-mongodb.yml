@@ -104,5 +104,5 @@ jobs:
 
             sudo docker-compose down || true
 
-            MONGO_USERNAME=$MONGO_USERNAME MONGO_PASSWORD=$MONGO_PASSWORD MONGO_PORT=$MONGO_PORT sudo -E docker compose up -d
+            MONGO_USERNAME=$MONGO_USERNAME MONGO_PASSWORD=$MONGO_PASSWORD MONGO_PORT=$MONGO_PORT sudo -E docker-compose up -d
             sudo docker ps
