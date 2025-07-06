@@ -3,126 +3,154 @@ name: 🔧 Dev · Registration Service
 
 on:
   push:
-    branches: [ "development" ]
+    branches: ["development"]
     paths:
       - 'Auth/registration-service/**'
       - '.github/workflows/dev-registration-service.yml'
 
   pull_request:
-    branches: [ "QA" ]
+    branches: ["QA"]
     paths:
       - 'Auth/registration-service/**'
       - '.github/workflows/dev-registration-service.yml'
 
 jobs:
-  build-and-deploy:
-    name: Build, Push Docker Image and Deploy
+  test:
+    name: ✅ CI · Test Spring Boot
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    env:
+      APP_NAME: registration-service
+      SERVER_PORT: ${{ secrets.PORT_LOGIN }}
+      DB_HOST: ${{ secrets.EC2_BD_DEV }}
+      DB_PORT: ${{ secrets.PORT_POSTGRES1 }}
+      DB_NAME: ${{ secrets.DB_POSTGRES }}
+      DB_USERNAME: ${{ secrets.USER_POSTGRES }}
+      DB_PASSWORD: ${{ secrets.PASS_DB }}
+      HIBERNATE_DDL_AUTO: ${{ secrets.HIBERNATE_DDL_AUTO }}
+      SHOW_SQL: ${{ secrets.SHOW_SQL }}
+      HIBERNATE_DIALECT: ${{ secrets.HIBERNATE_DIALECT }}
+      LOGGING_LEVEL_HIBERNATE_SQL: ${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION_MS: ${{ secrets.JWT_EXPIRATION_MS }}
+      JWT_REFRESH_EXPIRATION_MS: ${{ secrets.JWT_REFRESH_EXPIRATION_MS }}
+      CORS_ALLOWED: ${{ secrets.CORS_ALLOWED }}
+      HOST_REDIS: ${{ secrets.EC2_BD_DEV }}
+      PORT_REDIS: ${{ secrets.PORT_REDIS1 }}
+      PASS_REDIS: ${{ secrets.PASS_DB }}
 
-      - name: Set up JDK
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: 🧪 Run Tests with Maven
+        run: mvn clean verify -f Auth/registration-service/pom.xml
 
-      - name: Build .jar file (Skip tests)
-        run: mvn clean install -DskipTests -f Auth/registration-service/pom.xml
+  deploy:
+    name: 🚀 CD · Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: test
 
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/registration-service
+      CONTAINER_NAME: registration-service
+      APP_NAME: registration-service
+      SERVER_PORT: ${{ secrets.PORT_LOGIN }}
+      DB_HOST: ${{ secrets.EC2_BD_DEV }}
+      DB_PORT: ${{ secrets.PORT_POSTGRES1 }}
+      DB_NAME: ${{ secrets.DB_POSTGRES }}
+      DB_USERNAME: ${{ secrets.USER_POSTGRES }}
+      DB_PASSWORD: ${{ secrets.PASS_DB }}
+      HIBERNATE_DDL_AUTO: ${{ secrets.HIBERNATE_DDL_AUTO }}
+      SHOW_SQL: ${{ secrets.SHOW_SQL }}
+      HIBERNATE_DIALECT: ${{ secrets.HIBERNATE_DIALECT }}
+      LOGGING_LEVEL_HIBERNATE_SQL: ${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION_MS: ${{ secrets.JWT_EXPIRATION_MS }}
+      JWT_REFRESH_EXPIRATION_MS: ${{ secrets.JWT_REFRESH_EXPIRATION_MS }}
+      CORS_ALLOWED: ${{ secrets.CORS_ALLOWED }}
+      HOST_REDIS: ${{ secrets.EC2_BD_DEV }}
+      PORT_REDIS: ${{ secrets.PORT_REDIS1 }}
+      PASS_REDIS: ${{ secrets.PASS_DB }}
+
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Docker Login
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        run: |
-          docker build Auth/registration-service/. --file Auth/registration-service/Dockerfile \
-            --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }} \
-            --tag ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:${{ github.run_number }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+      - name: 🏗️ Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Auth/registration-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.run_number }}
+            ${{ env.IMAGE_NAME }}:latest
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.6
+      - name: 🚀 SSH & Deploy
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST_REGISTRATION }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
           script: |
-            # Instalar Docker si no está presente (Ubuntu-compatible)
+            set -e
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/registration-service:latest
+            CONTAINER=registration-service
+
+            echo "🔍 Checking Docker..."
             if ! command -v docker &> /dev/null; then
-              echo "==> Installing Docker on Ubuntu"
+              echo "🔧 Installing Docker..."
               sudo apt-get update -y
-              sudo apt-get install -y ca-certificates curl gnupg lsb-release
-              sudo mkdir -p /etc/apt/keyrings
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-              sudo apt-get update -y
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-              sudo usermod -aG docker $USER
+              sudo apt-get install -y docker.io
               sudo systemctl start docker
-            fi
-
-            # Crear archivo .env temporal
-            ENV_PATH=~/registration-service.env
-            echo "APP_NAME=${{ secrets.APP_NAME }}" > $ENV_PATH
-            echo "SERVER_PORT=${{ secrets.SERVER_PORT_REGISTRATION }}" >> $ENV_PATH
-            echo "DB_URL=${{ secrets.DB_URL }}" >> $ENV_PATH
-            echo "DB_USERNAME=${{ secrets.POSTGRES_USER }}" >> $ENV_PATH
-            echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $ENV_PATH
-            echo "HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }}" >> $ENV_PATH
-            echo "SHOW_SQL=${{ secrets.SHOW_SQL }}" >> $ENV_PATH
-            echo "HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }}" >> $ENV_PATH
-            echo "LOGGING_LEVEL_HIBERNATE_SQL=${{ secrets.LOGGING_LEVEL_HIBERNATE_SQL }}" >> $ENV_PATH
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $ENV_PATH
-            echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" >> $ENV_PATH
-            echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" >> $ENV_PATH
-            echo "CORS_ALLOWED=${{ secrets.CORS_ALLOWED }}" >> $ENV_PATH
-            echo "HOST_REDIS=${{ secrets.REDIS_HOST }}" >> $ENV_PATH
-            echo "PORT_REDIS=${{ secrets.REDIS_PORT }}" >> $ENV_PATH
-            echo "PASS_REDIS=${{ secrets.REDIS_PASSWORD }}" >> $ENV_PATH
-
-            # Eliminar imagen vieja
-            sudo docker image prune -f
-
-            # Pull de imagen
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
-
-            # Detener contenedor anterior si existe
-            if [ $(sudo docker ps -aq -f name=registration-service) ]; then
-              echo "==> Stopping and removing existing container"
-              sudo docker stop registration-service
-              sudo docker rm registration-service
-            fi
-
-            # Ejecutar nuevo contenedor
-            echo "==> Starting new container"
-            sudo docker run -d --name registration-service \
-              --env-file $ENV_PATH \
-              -p 3002:${{ secrets.SERVER_PORT_REGISTRATION }} \
-              --restart unless-stopped \
-              ${{ secrets.DOCKER_USERNAME }}/registration-service:latest
-
-            # Verificar contenedor
-            if sudo docker ps -f name=registration-service | grep registration-service; then
-              echo "✅ Container started successfully"
-              rm -f $ENV_PATH
             else
-              echo "❌ Failed to start the container"
-              exit 1
+              echo "✅ Docker already installed."
             fi
+
+            echo "📥 Pulling latest image..."
+            sudo docker pull $IMAGE
+
+            echo "🧹 Cleaning old container..."
+            if sudo docker ps -a --format '{{.Names}}' | grep -q $CONTAINER; then
+              sudo docker stop $CONTAINER || true
+              sudo docker rm $CONTAINER || true
+            fi
+
+            echo "🚀 Starting new container..."
+            sudo docker run -d --name $CONTAINER \
+              -p ${{ env.SERVER_PORT }}:${{ env.SERVER_PORT }} \
+              -e APP_NAME=${{ env.APP_NAME }} \
+              -e SERVER_PORT=${{ env.SERVER_PORT }} \
+              -e DB_HOST=${{ env.DB_HOST }} \
+              -e DB_PORT=${{ env.DB_PORT }} \
+              -e DB_NAME=${{ env.DB_NAME }} \
+              -e DB_USERNAME=${{ env.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ env.DB_PASSWORD }} \
+              -e HIBERNATE_DDL_AUTO=${{ env.HIBERNATE_DDL_AUTO }} \
+              -e SHOW_SQL=${{ env.SHOW_SQL }} \
+              -e HIBERNATE_DIALECT=${{ env.HIBERNATE_DIALECT }} \
+              -e LOGGING_LEVEL_HIBERNATE_SQL=${{ env.LOGGING_LEVEL_HIBERNATE_SQL }} \
+              -e JWT_SECRET=${{ env.JWT_SECRET }} \
+              -e JWT_EXPIRATION_MS=${{ env.JWT_EXPIRATION_MS }} \
+              -e JWT_REFRESH_EXPIRATION_MS=${{ env.JWT_REFRESH_EXPIRATION_MS }} \
+              -e CORS_ALLOWED=${{ env.CORS_ALLOWED }} \
+              -e HOST_REDIS=${{ env.HOST_REDIS }} \
+              -e PORT_REDIS=${{ env.PORT_REDIS }} \
+              -e PASS_REDIS=${{ env.PASS_REDIS }} \
+              --restart unless-stopped \
+              $IMAGE
+
+            echo "✅ Deployment complete!"
