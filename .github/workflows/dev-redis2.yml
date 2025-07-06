@@ -1,18 +1,18 @@
 # dev-redis.yml
-name: 🧪 Dev · Redis
+name: 🧪 Dev · Redis 2
 
 on:
   push:
     branches: [ "development" ]
     paths:
-      - 'DB/Redis/**'
-      - '.github/workflows/dev-redis.yml'
+      - 'DB/Redis2/**'
+      - '.github/workflows/dev-redis2.yml'
 
   pull_request:
     branches: [ "QA" ]
     paths:
-      - 'DB/Redis/**'
-      - '.github/workflows/dev-redis.yml'
+      - 'DB/Redis2/**'
+      - '.github/workflows/dev-redis2.yml'
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
 
     env:
       REDIS_PASSWORD: ${{ secrets.PASS_DB }}
-      REDIS_PORT: ${{ secrets.PORT_REDIS1 }}
+      REDIS_PORT: ${{ secrets.PORT_REDIS2 }}
 
     steps:
       - name: Checkout code
@@ -32,16 +32,16 @@ jobs:
           host: ${{ secrets.EC2_BD_DEV }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY_BD }}
-          script: mkdir -p /home/${{ secrets.EC2_USER }}/redis-deploy
+          script: mkdir -p /home/${{ secrets.EC2_USER }}/redis2-deploy
 
-      - name: Copy Redis files to EC2
+      - name: Copy Redis 2 files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_BD_DEV }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY_BD }}
-          source: "DB/Redis/docker-compose.yml"
-          target: /home/${{ secrets.EC2_USER }}/redis-deploy
+          source: "DB/Redis2/docker-compose.yml"
+          target: /home/${{ secrets.EC2_USER }}/redis2-deploy
           debug: true
 
       - name: Install Docker and Docker Compose if not present
@@ -74,17 +74,17 @@ jobs:
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
               echo "✅ Docker instalado con éxito."
             else
-              echo "✅ Docker ya está instalado."
+              echo "✅ Docker ya instalado."
             fi
 
             if ! docker compose version &> /dev/null; then
-              echo "⚠️ docker compose plugin no encontrado. Instalando..."
+              echo "⚠️ Plugin docker compose no encontrado. Instalando..."
               sudo apt-get install -y docker-compose-plugin
             else
-              echo "✅ docker compose plugin instalado."
+              echo "✅ Plugin docker compose ya está instalado."
             fi
 
-      - name: Deploy Redis on EC2
+      - name: Deploy Redis 2 on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_BD_DEV }}
@@ -92,17 +92,17 @@ jobs:
           key: ${{ secrets.EC2_KEY_BD }}
           envs: REDIS_PASSWORD,REDIS_PORT
           script: |
-            cd /home/${{ secrets.EC2_USER }}/redis-deploy/DB/Redis
+            cd /home/${{ secrets.EC2_USER }}/redis2-deploy/DB/Redis2
 
             # Limpiar contenedores previos
-            CONTAINERS=$(sudo docker ps -a --filter "name=redis-container" -q)
+            CONTAINERS=$(sudo docker ps -a --filter "name=redis-container2" -q)
             if [ -n "$CONTAINERS" ]; then
               echo "🧹 Deteniendo contenedores redis existentes..."
               sudo docker stop $CONTAINERS || true
               echo "🗑️ Eliminando contenedores redis existentes..."
               sudo docker rm $CONTAINERS || true
             else
-              echo "✅ No se encontraron contenedores redis para detener/eliminar."
+              echo "✅ No se encontraron contenedores redis para limpiar."
             fi
 
             # Despliegue
