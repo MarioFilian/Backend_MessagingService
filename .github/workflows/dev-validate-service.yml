@@ -18,6 +18,10 @@ jobs:
   ci:
     name: ⚙️ Run CI
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      APP_ENV: prod
+      APP_DEBUG: 0
     defaults:
       run:
         working-directory: Auth/validate-service
@@ -45,6 +49,10 @@ jobs:
     name: 🚀 Deploy to EC2
     needs: ci
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      APP_ENV: prod
+      APP_DEBUG: 0
     defaults:
       run:
         working-directory: Auth/validate-service
@@ -96,11 +104,13 @@ jobs:
             echo "📥 Pulling latest image..."
             sudo docker pull $IMAGE
 
-            echo "🧹 Removing old container..."
-            sudo docker stop $CONTAINER || true
-            sudo docker rm $CONTAINER || true
+            echo "🧹 Cleaning old container..."
+            if sudo docker ps -a --format '{{.Names}}' | grep -q $CONTAINER; then
+              sudo docker stop $CONTAINER || true
+              sudo docker rm $CONTAINER || true
+            fi
 
-            echo "🐳 Running new container..."
+            echo "🐳 Deploying container..."
             sudo docker run -d --name $CONTAINER -p ${{ secrets.SERVER_PORT_VALIDATE }}:80 \
               -e APP_ENV=prod \
               -e APP_DEBUG=0 \
