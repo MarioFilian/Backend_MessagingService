@@ -8,27 +8,25 @@ RUN apt-get update && apt-get install -y \
 # Habilita módulo rewrite
 RUN a2enmod rewrite
 
-# Copia Composer desde una imagen oficial
+# Copia Composer desde imagen oficial
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copia el código fuente al contenedor
+# Copia el código fuente
 COPY . /var/www/html/
 WORKDIR /var/www/html
 
 # Instala dependencias PHP
 RUN composer install --no-interaction --optimize-autoloader
 
-# Establece permisos
+# Establece permisos correctos
 RUN chown -R www-data:www-data /var/www/html
 
-# Cambia DocumentRoot a /public
+# Cambia el DocumentRoot a /public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
-# Permite que Apache respete el .htaccess de Symfony
+# Permite uso de .htaccess
 RUN echo '<Directory /var/www/html/public>\nAllowOverride All\nRequire all granted\n</Directory>' >> /etc/apache2/apache2.conf
 
-# Expone el puerto por defecto de Apache
 EXPOSE 80
 
-# Comando por defecto
 CMD ["apache2-foreground"]
