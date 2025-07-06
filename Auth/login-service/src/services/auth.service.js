@@ -1,7 +1,7 @@
-const tokenUtil = require('../utils/token');
-const { getRedis } = require('../config/redis'); // NO la instancia directa
 const db = require('../config/postgres');
+const { getRedis } = require('../config/redis');
 const bcrypt = require('bcrypt');
+const tokenUtil = require('../utils/token');
 
 const authenticateUser = async (username, password) => {
   const query = 'SELECT * FROM users WHERE username = $1';
@@ -12,8 +12,8 @@ const authenticateUser = async (username, password) => {
   }
 
   const user = result.rows[0];
-
   const passwordMatch = await bcrypt.compare(password, user.password);
+
   if (!passwordMatch) {
     throw new Error('Contraseña incorrecta');
   }
@@ -22,8 +22,7 @@ const authenticateUser = async (username, password) => {
   const accessToken = tokenUtil.generateAccessToken(payload);
   const refreshToken = tokenUtil.generateRefreshToken(payload);
 
-  const redis = getRedis();  // obtener instancia activa
-
+  const redis = getRedis();
   await redis.set(refreshToken, user.username);
 
   return { accessToken, refreshToken };

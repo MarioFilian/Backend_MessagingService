@@ -1,8 +1,9 @@
 require('dotenv').config();
-const EC2_HOST_LOGIN = process.env.EC2_HOST_LOGIN;
-const PORT = process.env.PORT;
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+
+const EC2_HOST_LOGIN = process.env.EC2_HOST_LOGIN || 'localhost';
+const PORT = process.env.PORT || 3001;
 
 const options = {
   definition: {
@@ -18,7 +19,7 @@ const options = {
       },
     ],
   },
-  apis: ['./src/routes/*.js'], // ruta donde están tus rutas con anotaciones
+  apis: ['./src/routes/*.js'], // Aquí lee tus anotaciones Swagger
 };
 
 const specs = swaggerJsdoc(options);

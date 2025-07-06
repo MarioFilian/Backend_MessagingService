@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./src/routes/auth.routes');
@@ -12,6 +11,6 @@ app.use(express.json());
 setupSwagger(app);
 app.use('/auth', authRoutes);
 
-app.get('/auth/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 module.exports = app;
