@@ -45,9 +45,9 @@ jobs:
     env:
       IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/login-service:latest
       CONTAINER_NAME: login-service
-      REMOTE_HOST: ${{ secrets.EC2_HOST_LOGIN }}
+      REMOTE_HOST: ${{ secrets.EC2_AUTH_DEV }}
       REMOTE_USER: ${{ secrets.EC2_USER }}
-      SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      SSH_KEY: ${{ secrets.EC2_KEY_BD }}
 
     steps:
       - name: Checkout code
@@ -107,14 +107,14 @@ jobs:
               -p ${{ secrets.PORT_LOGIN }}:${{ secrets.PORT_LOGIN }} \
               -e PORT=${{ secrets.PORT_LOGIN }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-              -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
-              -e DB_HOST=${{ secrets.POSTGRES_HOST }} \
-              -e DB_PORT=${{ secrets.DB_PORT }} \
-              -e DB_USERNAME=${{ secrets.POSTGRES_USER }} \
-              -e DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-              -e DB_NAME=${{ secrets.POSTGRES_DB }} \
+              -e REDIS_HOST=${{ secrets.EC2_BD_DEV }} \
+              -e REDIS_PORT=${{ secrets.PORT_REDIS1 }} \
+              -e REDIS_PASSWORD=${{ secrets.PASS_DB }} \
+              -e DB_HOST=${{ secrets.EC2_BD_DEV }} \
+              -e DB_PORT=${{ secrets.PORT_POSTGRES1 }} \
+              -e DB_USERNAME=${{ secrets.USER_POSTGRES }} \
+              -e DB_PASSWORD=${{ secrets.PASS_DB }} \
+              -e DB_NAME=${{ secrets.DB_POSTGRES }} \
               --restart unless-stopped \
               $IMAGE_NAME
 
