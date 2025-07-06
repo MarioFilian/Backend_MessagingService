@@ -60,7 +60,7 @@ jobs:
       IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/registration-service
       CONTAINER_NAME: registration-service
       APP_NAME: registration-service
-      SERVER_PORT: ${{ secrets.PORT_LOGIN }}
+      SERVER_PORT: ${{ secrets.PORT_REGISTER }}
       DB_HOST: ${{ secrets.EC2_BD_DEV }}
       DB_PORT: ${{ secrets.PORT_POSTGRES1 }}
       DB_NAME: ${{ secrets.DB_POSTGRES }}
