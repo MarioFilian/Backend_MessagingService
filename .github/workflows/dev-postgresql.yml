@@ -47,13 +47,32 @@ jobs:
           target: /home/${{ secrets.EC2_USER }}/postgres-deploy
           debug: true
 
-      - name: Clean old containers on EC2
+      - name: SSH into EC2 and deploy PostgreSQL
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_BD_DEV }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY_BD }}
+          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_PORT
           script: |
+            # Verifica si Docker está instalado
+            echo "Checking Docker installation..."
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+            else
+              echo "✅ Docker ya está instalado."
+            fi
+
+            if ! docker compose version &> /dev/null; then
+              echo "🔧 Instalando Docker Compose plugin..."
+              sudo apt-get install -y docker-compose-plugin || sudo apt-get install -y docker-compose
+            else
+              echo "✅ Docker Compose ya está instalado."
+            fi
+
             cd /home/${{ secrets.EC2_USER }}/postgres-deploy
             CONTAINER_ID=$(sudo docker ps -a -q --filter "name=postgresql")
             if [ -n "$CONTAINER_ID" ]; then
@@ -64,54 +83,13 @@ jobs:
               echo "✅ No hay contenedores PostgreSQL detenidos que limpiar."
             fi
 
-      - name: SSH into EC2 and deploy PostgreSQL
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_BD_DEV }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
-          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_PORT
-          script: |
-            # Verifica si Docker está instalado
-            if ! command -v docker &> /dev/null; then
-              echo "🚀 Docker no encontrado. Instalando..."
-              sudo apt-get update -y
-              sudo apt-get install -y \
-                  ca-certificates \
-                  curl \
-                  gnupg \
-                  lsb-release
-
-              sudo mkdir -p /etc/apt/keyrings
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-                sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-
-              echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-                https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" | \
-                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-              sudo apt-get update -y
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-              echo "✅ Docker instalado con éxito."
-            else
-              echo "✅ Docker ya está instalado. Verificando docker compose..."
-              if ! docker compose version &> /dev/null; then
-                echo "⚠️ 'docker compose' no encontrado. Instalando plugin..."
-                sudo apt-get install -y docker-compose-plugin
-              else
-                echo "✅ 'docker compose' ya está instalado."
-              fi
-            fi
-
             # Despliegue del servicio PostgreSQL
             cd /home/${{ secrets.EC2_USER }}/postgres-deploy/DB/PostgreSQL
             POSTGRES_USER=$POSTGRES_USER \
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
             POSTGRES_DB=$POSTGRES_DB \
             POSTGRES_PORT=$POSTGRES_PORT \
-            sudo -E docker-compose up -d
+            sudo -E docker compose up -d
 
       - name: 🔍 Verify PostgreSQL container status
         uses: appleboy/ssh-action@v1.0.0
