@@ -111,7 +111,7 @@ jobs:
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
             POSTGRES_DB=$POSTGRES_DB \
             POSTGRES_PORT=$POSTGRES_PORT \
-            sudo -E docker compose up -d
+            sudo -E docker-compose up -d
 
       - name: 🔍 Verify PostgreSQL 2 container status
         uses: appleboy/ssh-action@v1.0.0
