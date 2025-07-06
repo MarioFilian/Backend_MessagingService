@@ -88,7 +88,7 @@ jobs:
             MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
             MYSQL_DATABASE=$MYSQL_DATABASE \
             MYSQL_PORT=$MYSQL_PORT \
-            sudo -E docker compose up -d
+            sudo -E docker-compose up -d
 
             echo "🔍 Contenedores activos:"
             sudo docker ps --filter "name=mysql"
