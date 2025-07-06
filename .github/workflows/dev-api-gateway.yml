@@ -74,11 +74,9 @@ jobs:
             echo "Running container with environment variables injected directly..."
             sudo docker run -d --name $CONTAINER_NAME \
               -p 80:${{ secrets.PORT_APIGATEWAY }} \
-              -e HOST_LOGIN=${{ secrets.EC2_AUTH_DEV }} \
+              -e HOST_AUTH=${{ secrets.EC2_AUTH_DEV }} \
               -e PORT_LOGIN=${{ secrets.PORT_LOGIN }} \
-              -e HOST_REGISTER=${{ secrets.EC2_AUTH_DEV }} \
               -e PORT_REGISTER=${{ secrets.PORT_REGISTER }} \
-              -e HOST_VALIDATE=${{ secrets.EC2_AUTH_DEV }} \
               -e PORT_VALIDATE=${{ secrets.PORT_VALIDATETOKEN }} \
               $IMAGE_NAME
 
