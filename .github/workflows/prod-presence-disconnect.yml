@@ -1,9 +1,0 @@
-# prod-presence-disconnect.yml
-name: 🚀 Prod · Presence Disconnect Service
-
-on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'Connection/presence-disconnect-service/**'
-      - '.github/workflows/prod-presence-disconnect.yml'

@@ -1,9 +1,0 @@
-# prod-contact-read.yml
-name: 🚀 Prod · Contact Read Service
-
-on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'Contacts/contact-read-service/**'
-      - '.github/workflows/prod-contact-read.yml'

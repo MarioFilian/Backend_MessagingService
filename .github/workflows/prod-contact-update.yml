@@ -1,9 +1,0 @@
-# prod-contact-update.yml
-name: 🚀 Prod · Contact Update Service
-
-on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'Contacts/contact-update-service/**'
-      - '.github/workflows/prod-contact-update.yml'
