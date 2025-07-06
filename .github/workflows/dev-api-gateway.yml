@@ -21,9 +21,9 @@ jobs:
     env:
       IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
       CONTAINER_NAME: api-gateway
-      REMOTE_HOST: ${{ secrets.EC2_HOST_API_GATEWAY }}
+      REMOTE_HOST: ${{ secrets.EC2_API_GATEWAY }}
       REMOTE_USER: ${{ secrets.EC2_USER }}
-      SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      SSH_KEY: ${{ secrets.EC2_KEY_BD }}
 
     steps:
       - name: 📦 Checkout source code
@@ -73,10 +73,13 @@ jobs:
 
             echo "Running container with environment variables injected directly..."
             sudo docker run -d --name $CONTAINER_NAME \
-              -p 80:3000 \
-              -e HOST_LOGIN=${{ secrets.API_GATEWAY_HOST_LOGIN_DEV_QA }} \
-              -e HOST_REGISTER=${{ secrets.API_GATEWAY_HOST_REGISTER_DEV_QA }} \
-              -e HOST_VALIDATE=${{ secrets.API_GATEWAY_HOST_VALIDATE_DEV_QA }} \
+              -p 80:${{ secrets.PORT_APIGATEWAY }} \
+              -e HOST_LOGIN=${{ secrets.EC2_AUTH_DEV }} \
+              -e PORT_LOGIN=${{ secrets.PORT_LOGIN }} \
+              -e HOST_REGISTER=${{ secrets.EC2_AUTH_DEV }} \
+              -e PORT_REGISTER=${{ secrets.PORT_REGISTER }} \
+              -e HOST_VALIDATE=${{ secrets.EC2_AUTH_DEV }} \
+              -e PORT_VALIDATE=${{ secrets.PORT_VALIDATETOKEN }} \
               $IMAGE_NAME
 
             echo "Deployment complete."
