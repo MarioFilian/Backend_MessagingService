@@ -55,23 +55,27 @@ jobs:
           key: ${{ secrets.EC2_KEY_DB }}
           envs: MYSQL_ROOT_PASSWORD,MYSQL_DATABASE,MYSQL_USER,MYSQL_PASSWORD,MYSQL_PORT
           script: |
-            # Instalar Docker si no está disponible
+            # Instalar Docker si no está
             if ! command -v docker &> /dev/null; then
               echo "📦 Instalando Docker..."
               sudo apt-get update -y
               sudo apt-get install -y docker.io
               sudo systemctl start docker
               sudo systemctl enable docker
+            else
+              echo "✅ Docker ya está instalado."
             fi
 
-            # Instalar Docker Compose Plugin si no está
+            # Instalar Docker Compose si no está
             if ! docker compose version &> /dev/null; then
               echo "🔧 Instalando Docker Compose plugin..."
               sudo apt-get install -y docker-compose-plugin || sudo apt-get install -y docker-compose
+            else
+              echo "✅ Docker Compose ya está instalado."
             fi
 
-            # Moverse al directorio del servicio
-            cd /home/${{ secrets.EC2_USER }}/mysql-deploy/DB/MySQL
+            # Ir al directorio del servicio
+            cd /home/${{ secrets.EC2_USER }}/mysql-deploy/DB/MySQL || cd /home/${{ secrets.EC2_USER }}/mysql-deploy
 
             # Detener y eliminar contenedores antiguos
             CONTAINERS=$(sudo docker ps -a -q --filter "name=mysql")
@@ -81,14 +85,14 @@ jobs:
               echo "🧽 Eliminando contenedores antiguos..."
               sudo docker rm $CONTAINERS || true
             else
-              echo "✅ No se encontraron contenedores MySQL activos."
+              echo "✅ No hay contenedores antiguos activos."
             fi
 
-            # Eliminar redes o volúmenes anteriores (opcional)
+            # Eliminar stack anterior
             sudo docker compose down || true
 
-            # Lanzar servicio MySQL
-            echo "🚀 Desplegando MySQL..."
+            # Lanzar nuevo contenedor MySQL
+            echo "🚀 Desplegando contenedor MySQL..."
             MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
             MYSQL_DATABASE=$MYSQL_DATABASE \
             MYSQL_USER=$MYSQL_USER \
@@ -96,6 +100,6 @@ jobs:
             MYSQL_PORT=$MYSQL_PORT \
             sudo -E docker compose up -d
 
-            # Verificación
+            # Mostrar contenedores activos
             echo "🔍 Contenedores activos:"
             sudo docker ps --filter "name=mysql"
