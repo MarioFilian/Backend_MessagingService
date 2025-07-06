@@ -63,15 +63,20 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY_BD }}
           script: |
-            sudo apt-get update
-            sudo apt-get install -y docker.io curl
-            sudo systemctl start docker
-            sudo systemctl enable docker
+            if ! command -v docker &> /dev/null; then
+              echo "🔧 Instalando Docker..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io curl
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker $USER || true
+            fi
 
-            sudo usermod -aG docker $USER || true
-
-            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
+            if ! command -v docker-compose &> /dev/null; then
+              echo "🔧 Instalando Docker Compose..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
 
             docker --version || echo "docker not found"
             docker-compose --version || echo "docker-compose not found"
