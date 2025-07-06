@@ -29,17 +29,17 @@ jobs:
       - name: Ensure target directory exists on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           script: mkdir -p /home/${{ secrets.EC2_USER }}/redis2-deploy
 
       - name: Copy Redis files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           source: "DB/Redis2/docker-compose.yml"
           target: /home/${{ secrets.EC2_USER }}/redis2-deploy
           debug: true
@@ -47,17 +47,18 @@ jobs:
       - name: Install Docker and Docker Compose if not present
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           script: |
             # Verifica si Docker está instalado
             echo "Checking Docker installation..."
             if ! command -v docker &> /dev/null; then
-              echo "Installing Docker..."
+              echo "📦 Instalando Docker..."
               sudo apt-get update -y
               sudo apt-get install -y docker.io
               sudo systemctl start docker
+              sudo systemctl enable docker
             else
               echo "✅ Docker ya está instalado."
             fi
@@ -72,9 +73,9 @@ jobs:
       - name: Deploy Redis on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           envs: REDIS_PASSWORD,REDIS_PORT
           script: |
             cd /home/${{ secrets.EC2_USER }}/redis2-deploy/DB/Redis2
@@ -91,6 +92,6 @@ jobs:
             fi
 
             # Despliegue
-            REDIS_PASSWORD=$REDIS_PASSWORD REDIS_PORT=$REDIS_PORT sudo -E docker compose up -d
+            REDIS_PASSWORD=$REDIS_PASSWORD REDIS_PORT=$REDIS_PORT sudo -E docker-compose up -d
             echo "🔍 Contenedores activos:"
             sudo docker ps
