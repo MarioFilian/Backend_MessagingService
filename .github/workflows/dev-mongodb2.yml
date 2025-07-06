@@ -1,0 +1,107 @@
+# dev-mongodb2.yml
+name: 🧪 Dev · MongoDB 2
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'DB/MongoDB2/**'
+      - '.github/workflows/dev-mongodb2.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'DB/MongoDB2/**'
+      - '.github/workflows/dev-mongodb2.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      MONGO_USERNAME: ${{ secrets.USER_MONGODB }}
+      MONGO_PASSWORD: ${{ secrets.PASS_DB }}
+      MONGO_PORT: ${{ secrets.PORT_MONGODB2 }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext
+
+      - name: Generate init-mongo.js with credentials
+        run: |
+          envsubst < DB/MongoDB2/init-mongo.template.js > DB/MongoDB2/init-mongo.js
+
+      - name: List files for verification
+        run: ls -lh DB/MongoDB2
+
+      - name: Ensure target directory exists on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: mkdir -p /home/${{ secrets.EC2_USER }}/mongo2-deploy
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          source: "DB/MongoDB2/docker-compose.yml,DB/MongoDB2/init-mongo.js"
+          target: /home/${{ secrets.EC2_USER }}/mongo2-deploy
+          debug: true
+
+      - name: Install Docker and Docker Compose on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: |
+            if ! command -v docker &> /dev/null; then
+              echo "🔧 Instalando Docker..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io curl
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker $USER || true
+            fi
+
+            if ! command -v docker-compose &> /dev/null; then
+              echo "🔧 Instalando Docker Compose..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
+            docker --version || echo "docker not found"
+            docker-compose --version || echo "docker-compose not found"
+
+      - name: SSH into EC2 and deploy MongoDB 2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          envs: MONGO_USERNAME,MONGO_PASSWORD,MONGO_PORT
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/mongo2-deploy/DB/MongoDB2
+
+            CONTAINERS=$(sudo docker ps -a --filter "name=mongo" -q)
+            if [ -n "$CONTAINERS" ]; then
+              echo "🧹 Deteniendo contenedores mongo existentes..."
+              sudo docker stop $CONTAINERS || true
+              echo "🗑️ Eliminando contenedores mongo existentes..."
+              sudo docker rm $CONTAINERS || true
+            else
+              echo "✅ No se encontraron contenedores mongo para detener/eliminar."
+            fi
+
+            sudo docker-compose down || true
+
+            echo "🚀 Desplegando MongoDB 2..."
+            MONGO_USERNAME=$MONGO_USERNAME MONGO_PASSWORD=$MONGO_PASSWORD MONGO_PORT=$MONGO_PORT sudo -E docker-compose up -d
+            sudo docker ps
