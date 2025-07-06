@@ -31,18 +31,18 @@ jobs:
       - name: Ensure target directory exists on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           script: |
             mkdir -p /home/${{ secrets.EC2_USER }}/postgres2-deploy
 
       - name: Copy docker-compose.yml to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           source: "DB/PostgreSQL2/docker-compose.yml"
           target: /home/${{ secrets.EC2_USER }}/postgres2-deploy
           debug: true
@@ -50,18 +50,18 @@ jobs:
       - name: SSH into EC2 and deploy PostgreSQL 2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_PORT
           script: |
             # Verifica si Docker está instalado
-            echo "Checking Docker installation..."
             if ! command -v docker &> /dev/null; then
-              echo "Installing Docker..."
+              echo "📦 Instalando Docker..."
               sudo apt-get update -y
               sudo apt-get install -y docker.io
               sudo systemctl start docker
+              sudo systemctl enable docker
             else
               echo "✅ Docker ya está instalado."
             fi
@@ -89,14 +89,14 @@ jobs:
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
             POSTGRES_DB=$POSTGRES_DB \
             POSTGRES_PORT=$POSTGRES_PORT \
-            sudo -E docker compose up -d
+            sudo -E docker-compose up -d
 
       - name: 🔍 Verify PostgreSQL 2 container status
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_BD_DEV }}
+          host: ${{ secrets.EC2_BD_DEV2 }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY_BD }}
+          key: ${{ secrets.EC2_KEY_MC3 }}
           script: |
             echo "🧪 Verifying PostgreSQL 2 container status..."
             sudo docker ps --filter "name=postgresql2"
