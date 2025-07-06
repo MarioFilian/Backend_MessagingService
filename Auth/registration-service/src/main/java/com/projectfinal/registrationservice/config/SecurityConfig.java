@@ -26,9 +26,9 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/v3/api-docs",
                                 "/swagger-resources/**",
-                                "/webjars/**"
+                                "/webjars/**",
+                                "/health",
                         ).permitAll()
-                        .antMatchers("/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
