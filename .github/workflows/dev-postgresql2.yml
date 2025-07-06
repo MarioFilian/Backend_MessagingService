@@ -47,7 +47,7 @@ jobs:
           target: /home/${{ secrets.EC2_USER }}/postgres2-deploy
           debug: true
 
-      - name: Clean old containers and volumes on EC2
+      - name: Clean old containers on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_BD_DEV }}
@@ -55,8 +55,8 @@ jobs:
           key: ${{ secrets.EC2_KEY_BD }}
           script: |
             cd /home/${{ secrets.EC2_USER }}/postgres2-deploy
-            sudo docker-compose down --volumes --remove-orphans || true
-            sudo docker system prune -af --volumes || true
+            sudo docker-compose down --remove-orphans || true
+            sudo docker container prune -f || true
 
       - name: SSH into EC2 and deploy PostgreSQL 2
         uses: appleboy/ssh-action@v1.0.0
