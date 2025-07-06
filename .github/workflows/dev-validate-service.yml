@@ -25,9 +25,6 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📄 Create temporary .env file
-        run: echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
-
       - name: 🧰 Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -43,9 +40,6 @@ jobs:
 
       - name: 🧪 PHP Syntax Check
         run: find src/ -type f -name "*.php" -exec php -l {} \;
-
-      - name: 🧹 Remove temporary .env file
-        run: rm .env
 
   cd:
     name: 🚀 Deploy to EC2
@@ -69,14 +63,10 @@ jobs:
 
       - name: 🏗️ Build and push Docker image
         run: |
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
-
           docker build . \
             --file Dockerfile \
             --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }} \
             --tag ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
-
-          rm -f .env
 
           docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:${{ github.run_number }}
           docker push ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
@@ -84,37 +74,35 @@ jobs:
       - name: 🔐 SSH and Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST_VALIDATE }}
+          host: ${{ secrets.EC2_AUTH_DEV }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_KEY_BD }}
           script: |
+            set -e
+
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
+            CONTAINER=auth-validate-service
+
+            echo "🔍 Checking Docker..."
             if ! command -v docker &> /dev/null; then
-              echo "🚧 Docker no está instalado. Instalando Docker..."
-              sudo apt-get update
-              sudo apt-get install -y \
-                apt-transport-https \
-                ca-certificates \
-                curl \
-                gnupg-agent \
-                software-properties-common
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-              sudo add-apt-repository \
-                "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) \
-                stable"
-              sudo apt-get update
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+              echo "🔧 Installing Docker..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
             else
-              echo "✅ Docker ya está instalado"
+              echo "✅ Docker already installed."
             fi
 
-            echo "🐳 Desplegando contenedor..."
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
-            sudo docker stop auth-validate-service || true
-            sudo docker rm auth-validate-service || true
-            sudo docker run -d --name auth-validate-service -p ${{ secrets.SERVER_PORT_VALIDATE }}:80 \
+            echo "📥 Pulling latest image..."
+            sudo docker pull $IMAGE
+
+            echo "🧹 Removing old container..."
+            sudo docker stop $CONTAINER || true
+            sudo docker rm $CONTAINER || true
+
+            echo "🐳 Running new container..."
+            sudo docker run -d --name $CONTAINER -p ${{ secrets.SERVER_PORT_VALIDATE }}:80 \
               -e APP_ENV=prod \
               -e APP_DEBUG=0 \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              ${{ secrets.DOCKER_USERNAME }}/auth-validate-service:latest
-
+              $IMAGE
