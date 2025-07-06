@@ -20,8 +20,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
-      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_USERNAME: ${{ secrets.USER_MONGODB }}
+      MONGO_PASSWORD: ${{ secrets.PASS_DB }}
+      MONGO_PORT: ${{ secrets.PORT_MONGODB1 }}
 
     steps:
       - name: Checkout code
@@ -40,27 +41,27 @@ jobs:
       - name: Ensure target directory exists on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.MONGO_HOST }}
-          username: ${{ secrets.USER_UBUNTU }}
-          key: ${{ secrets.SSH_KEY_DB }}
-          script: mkdir -p /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          script: mkdir -p /home/${{ secrets.EC2_USER }}/mongo-deploy
 
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.MONGO_HOST }}
-          username: ${{ secrets.USER_UBUNTU }}
-          key: ${{ secrets.SSH_KEY_DB }}
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
           source: "DB/MongoDB/docker-compose.yml,DB/MongoDB/init-mongo.js"
-          target: /home/${{ secrets.USER_UBUNTU }}/mongo-deploy
+          target: /home/${{ secrets.EC2_USER }}/mongo-deploy
           debug: true
 
       - name: Install Docker and Docker Compose on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.MONGO_HOST }}
-          username: ${{ secrets.USER_UBUNTU }}
-          key: ${{ secrets.SSH_KEY_DB }}
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
           script: |
             sudo apt-get update
             sudo apt-get install -y docker.io curl
@@ -78,12 +79,25 @@ jobs:
       - name: SSH into EC2 and deploy MongoDB
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.MONGO_HOST }}
-          username: ${{ secrets.USER_UBUNTU }}
-          key: ${{ secrets.SSH_KEY_DB }}
-          envs: MONGO_USERNAME,MONGO_PASSWORD
+          host: ${{ secrets.EC2_BD_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_BD }}
+          envs: MONGO_USERNAME,MONGO_PASSWORD,MONGO_PORT
           script: |
-            cd /home/${{ secrets.USER_UBUNTU }}/mongo-deploy/DB/MongoDB
+            cd /home/${{ secrets.EC2_USER }}/mongo-deploy/DB/MongoDB
+            
+            # Buscar contenedores existentes con 'mongo' en el nombre
+            CONTAINERS=$(sudo docker ps -a --filter "name=mongo" -q)
+            if [ -n "$CONTAINERS" ]; then
+              echo "🧹 Deteniendo contenedores mongo existentes..."
+              sudo docker stop $CONTAINERS || true
+              echo "🗑️ Eliminando contenedores mongo existentes..."
+              sudo docker rm $CONTAINERS || true
+            else
+              echo "✅ No se encontraron contenedores mongo para detener/eliminar."
+            fi
+
             sudo docker-compose down || true
-            MONGO_USERNAME=$MONGO_USERNAME MONGO_PASSWORD=$MONGO_PASSWORD sudo -E docker-compose up -d
+
+            MONGO_USERNAME=$MONGO_USERNAME MONGO_PASSWORD=$MONGO_PASSWORD MONGO_PORT=$MONGO_PORT sudo -E docker-compose up -d
             sudo docker ps
