@@ -102,9 +102,9 @@ jobs:
       - name: 🚀 SSH & Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST_REGISTRATION }}
+          host: ${{ secrets.EC2_AUTH_DEV }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_KEY_BD }}
           script: |
             set -e
             IMAGE=${{ secrets.DOCKER_USERNAME }}/registration-service:latest
