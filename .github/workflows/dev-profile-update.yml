@@ -1,0 +1,104 @@
+name: 🔧 Dev · Profile Update Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Users/profile-update-service/**'
+      - '.github/workflows/dev-profile-update.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Users/profile-update-service/**'
+      - '.github/workflows/dev-profile-update.yml'
+
+jobs:
+  build-and-deploy:
+    name: 🚀 Build & Deploy Java Microservice
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/profile-update-service
+      CONTAINER_NAME: profile-update-service
+      PORT: ${{ secrets.PORT_UPDATEPROFILE }}
+
+    steps:
+      - name: 📦 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🧩 Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: ⚙️ Build JAR (skip tests)
+        run: mvn clean install -DskipTests -f Users/profile-update-service/pom.xml
+
+      - name: 🔐 DockerHub login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🐳 Build and push Docker image
+        run: |
+          docker build Users/profile-update-service/. --file Users/profile-update-service/Dockerfile \
+            --tag $IMAGE_NAME:${{ github.run_number }} \
+            --tag $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.run_number }}
+          docker push $IMAGE_NAME:latest
+
+      - name: 🚀 Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_USER_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_API }}
+          port: 22
+          envs: IMAGE_NAME,CONTAINER_NAME,PORT
+          script: |
+            set -e
+
+            echo "Checking Docker installation..."
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+            else
+              echo "Docker already installed."
+            fi
+
+            echo "Pulling latest image..."
+            sudo docker pull $IMAGE_NAME
+
+            echo "Stopping and removing old container..."
+            sudo docker stop $CONTAINER_NAME || true
+            sudo docker rm $CONTAINER_NAME || true
+
+            echo "Running new container with inline envs..."
+            sudo docker run -d --name $CONTAINER_NAME \
+              -e DB_HOST=${{ secrets.EC2_BD_DEV }} \
+              -e DB_PORT=${{ secrets.PORT_POSTGRES1 }} \
+              -e DB_USER=${{ secrets.USER_POSTGRES }} \
+              -e DB_PASSWORD=${{ secrets.PASS_DB }} \
+              -e DB_NAME=${{ secrets.POSTGRES_DB }} \
+              -e PORT=${{ secrets.PORT_UPDATEPROFILE }} \
+              -e HIBERNATE_DDL_AUTO=${{ secrets.HIBERNATE_DDL_AUTO }} \
+              -e SHOW_SQL=${{ secrets.SHOW_SQL }} \
+              -e HIBERNATE_DIALECT=${{ secrets.HIBERNATE_DIALECT }} \
+              -p $PORT:${{ secrets.PORT_UPDATEPROFILE }} \
+              --restart unless-stopped \
+              $IMAGE_NAME
+
+            echo "✅ Container deployed successfully"
