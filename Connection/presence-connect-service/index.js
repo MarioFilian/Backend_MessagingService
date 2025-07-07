@@ -1,7 +1,6 @@
-// index.js
 const express = require('express');
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const connectMongo = require('./db/mongo');
 const Presence = require('./models/Presence');
 
 dotenv.config();
@@ -11,14 +10,8 @@ const PORT = process.env.PORT || 3010;
 
 app.use(express.json());
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  dbName: 'presence-connect-service',
-}).then(() => {
-  console.log(`✅ Connected to MongoDB`);
-}).catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-});
+// Conexión MongoDB
+connectMongo();
 
 // 📌 Ruta para marcar usuario como conectado
 app.post('/presence/connect', async (req, res) => {
@@ -48,7 +41,11 @@ app.post('/presence/connect', async (req, res) => {
   }
 });
 
-// Iniciar servidor
+// Endpoint /health
+app.get('/health', (_, res) => {
+  res.status(200).json({ status: 'ok', service: 'presence-connect-service' });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Presence Connect Service running on http://localhost:${PORT}`);
 });

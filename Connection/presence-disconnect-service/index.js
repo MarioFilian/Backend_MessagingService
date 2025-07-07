@@ -1,6 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const connectMongo = require('./config/db');
 const Presence = require('./models/Presence');
 
 dotenv.config();
@@ -10,20 +10,14 @@ const PORT = process.env.PORT || 3011;
 
 app.use(express.json());
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  dbName: 'presence-connect-service',
-}).then(() => {
-  console.log(`✅ Connected to MongoDB`);
-}).catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-});
+// Connect to MongoDB
+connectMongo();
 
-// 📌 Ruta para marcar usuario como desconectado
+// Route to mark user as disconnected (offline)
 app.post('/presence/disconnect', async (req, res) => {
   const { userId, disconnectedAt } = req.body;
-
   const parsedUserId = parseInt(userId, 10);
+
   if (isNaN(parsedUserId)) {
     return res.status(400).json({ error: 'Invalid or missing userId' });
   }
@@ -34,7 +28,7 @@ app.post('/presence/disconnect', async (req, res) => {
       {
         $set: {
           status: 'offline',
-          disconnectedAt: disconnectedAt ? new Date(disconnectedAt) : new Date()
+          disconnectedAt: disconnectedAt ? new Date(disconnectedAt) : new Date(),
         }
       },
       { new: true }
@@ -52,12 +46,11 @@ app.post('/presence/disconnect', async (req, res) => {
   }
 });
 
-// Fallback 404
+// 404 fallback
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Presence Service running on http://localhost:${PORT}`);
+  console.log(`🚀 Presence Disconnect Service running on http://localhost:${PORT}`);
 });
