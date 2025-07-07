@@ -1,0 +1,90 @@
+name: 🔧 Dev · Profile Read Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Users/profile-read-service/**'
+      - '.github/workflows/dev-profile-read.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Users/profile-read-service/**'
+      - '.github/workflows/dev-profile-read.yml'
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to EC2
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/profile-read-service
+      CONTAINER_NAME: profile-read-service
+
+    defaults:
+      run:
+        working-directory: Users/profile-read-service
+
+    steps:
+      - name: 📅 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏗️ Build and push Docker image
+        run: |
+          docker build . \
+            --file Dockerfile \
+            --tag $IMAGE_NAME:${{ github.run_number }} \
+            --tag $IMAGE_NAME:latest
+
+          docker push $IMAGE_NAME:${{ github.run_number }}
+          docker push $IMAGE_NAME:latest
+
+      - name: 🚀 SSH and Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_USER_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_API }}
+          port: 22
+          envs: IMAGE_NAME,CONTAINER_NAME
+          script: |
+            set -e
+
+            echo "Checking Docker installation..."
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+            else
+              echo "Docker already installed."
+            fi
+
+            echo "Pulling latest image..."
+            sudo docker pull $IMAGE_NAME
+
+            echo "Stopping and removing old container..."
+            sudo docker stop $CONTAINER_NAME || true
+            sudo docker rm $CONTAINER_NAME || true
+
+            echo "Removing old image (optional)..."
+            sudo docker rmi $IMAGE_NAME || true
+
+            echo "Running new container..."
+            sudo docker run -d --name $CONTAINER_NAME -p ${{ secrets.PORT_READPROFILE }}:${{ secrets.PORT_READPROFILE }} \
+              -e DB_USERNAME=${{ secrets.USER_POSTGRES }} \
+              -e DB_PASSWORD=${{ secrets.PASS_DB }} \
+              -e DB_HOST=${{ secrets.EC2_BD_DEV }} \
+              -e DB_PORT=${{ secrets.PORT_POSTGRES1 }} \
+              -e DB_NAME=${{ secrets.POSTGRES_DB }} \
+              $IMAGE_NAME
