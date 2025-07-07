@@ -8,31 +8,33 @@ RUN apt-get update && apt-get install -y \
 # Habilita módulo rewrite
 RUN a2enmod rewrite
 
-# Copia Composer desde imagen oficial
+# Copia Composer desde una imagen oficial
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copia el código fuente
+# Copia el código fuente al contenedor
 COPY . /var/www/html/
 WORKDIR /var/www/html
 
-# Crea un .env temporal para evitar error en composer
-RUN echo "APP_ENV=prod" > .env
+# Agrega .env por defecto (evita crash en runtime)
+RUN echo "APP_ENV=prod\nAPP_DEBUG=0\nJWT_SECRET=changeme" > .env
 
-# Instala dependencias PHP
+# Instala dependencias PHP (ahora no falla por falta de .env)
 RUN composer install --no-interaction --optimize-autoloader
 
-# Borra el .env temporal para que no quede en producción
-RUN rm .env
-
-# Establece permisos correctos
+# Establece permisos
 RUN chown -R www-data:www-data /var/www/html
 
-# Cambia el DocumentRoot a /public
+# Cambia DocumentRoot a /public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
-# Permite uso de .htaccess
+# Permite que Apache respete el .htaccess de Symfony
 RUN echo '<Directory /var/www/html/public>\nAllowOverride All\nRequire all granted\n</Directory>' >> /etc/apache2/apache2.conf
 
-EXPOSE 80
+# Evita warning del ServerName
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# Expone el puerto por defecto de Apache
+EXPOSE 3004
+
+# Comando por defecto
 CMD ["apache2-foreground"]
