@@ -18,7 +18,7 @@ WORKDIR /var/www/html
 # Agrega .env por defecto (evita crash en runtime)
 RUN echo "APP_ENV=prod\nAPP_DEBUG=0\nJWT_SECRET=changeme" > .env
 
-# Instala dependencias PHP (ahora no falla por falta de .env)
+# Instala dependencias PHP
 RUN composer install --no-interaction --optimize-autoloader
 
 # Establece permisos
@@ -33,7 +33,10 @@ RUN echo '<Directory /var/www/html/public>\nAllowOverride All\nRequire all grant
 # Evita warning del ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Expone el puerto por defecto de Apache
+# 🔥 Cambia Apache para que escuche en el puerto 3004
+RUN sed -i 's/80/3004/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
+
+# Expone el puerto 3004
 EXPOSE 3004
 
 # Comando por defecto
