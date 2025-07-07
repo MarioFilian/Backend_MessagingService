@@ -72,6 +72,15 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
+      - name: ✅ Validate Docker Hub username secret
+        run: |
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
+            echo "❌ DOCKER_USERNAME secret is missing"
+            exit 1
+          else
+            echo "✅ DOCKER_USERNAME is set"
+          fi
+
       - name: 🐳 Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -79,16 +88,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: 🏗️ Build Docker image
-        run: |
-          docker build -t $IMAGE_NAME .
+        run: docker build -t $IMAGE_NAME .
 
       - name: 🏷️ Tag Docker image
-        run: |
-          docker tag $IMAGE_NAME ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:latest
+        run: docker tag $IMAGE_NAME ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
 
       - name: 📤 Push Docker image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
 
       - name: 🔐 Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -101,7 +107,7 @@ jobs:
             set -e
 
             CONTAINER_NAME="presence-connect-service"
-            IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/presence-connect-service:latest"
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/presence-connect-service:latest"
 
             echo "📦 Checking Docker installation..."
             if ! command -v docker &> /dev/null; then
