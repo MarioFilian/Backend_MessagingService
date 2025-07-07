@@ -1,0 +1,134 @@
+name: 🔧 Dev · Presence Connect Service
+
+on:
+  push:
+    branches: [ "development" ]
+    paths:
+      - 'Connection/presence-connect-service/**'
+      - '.github/workflows/dev-presence-connect.yml'
+
+  pull_request:
+    branches: [ "QA" ]
+    paths:
+      - 'Connection/presence-connect-service/**'
+      - '.github/workflows/dev-presence-connect.yml'
+
+jobs:
+  ci:
+    name: ✅ CI · Test, Lint & Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Connection/presence-connect-service
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🧪 Run tests (if available)
+        run: |
+          if [ -f "package.json" ] && npm run | grep -q test; then
+            npm test
+          else
+            echo "⚠️ No tests found, skipping"
+          fi
+
+      - name: 🧹 Run lint (if available)
+        run: |
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
+            npm run lint || echo "⚠️ Lint failed (ignored)"
+          else
+            echo "⚠️ No lint config found, skipping"
+          fi
+
+      - name: ✅ CI Finished
+        run: echo "CI completed successfully 🚀"
+
+  cd:
+    name: 🚀 CD · Docker Push & Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: ci
+
+    defaults:
+      run:
+        working-directory: Connection/presence-connect-service
+
+    env:
+      IMAGE_NAME: presence-connect-service
+      CONTAINER_NAME: presence-connect-service
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: 🏗️ Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      - name: 🏷️ Tag Docker image
+        run: |
+          docker tag $IMAGE_NAME ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:dev
+
+      - name: 📤 Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:dev
+
+      - name: 🔐 Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_CONNECTION_DEV }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY_M2 }}
+          port: 22
+          script: |
+            set -e
+
+            CONTAINER_NAME="presence-connect-service"
+            IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/presence-connect-service:dev"
+
+            echo "📦 Checking Docker installation..."
+            if ! command -v docker &> /dev/null; then
+              echo "🔧 Docker not found. Installing..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io
+              sudo systemctl enable docker
+              sudo systemctl start docker
+            else
+              echo "✅ Docker is already installed"
+            fi
+
+            echo "🧹 Cleaning up old container and image..."
+            sudo docker stop $CONTAINER_NAME || true
+            sudo docker rm $CONTAINER_NAME || true
+            sudo docker image prune -f
+
+            echo "📥 Pulling latest Docker image..."
+            sudo docker pull $IMAGE_NAME
+
+            echo "🚀 Running container..."
+            sudo docker run -d --name $CONTAINER_NAME \
+              -e PORT=${{ secrets.PORT_CONNECT }} \
+              -e MONGO_HOST=${{ secrets.EC2_BD_DEV }} \
+              -e MONGO_PORT=${{ secrets.PORT_MONGODB1 }} \
+              -e MONGO_DB=${{ secrets.MONGO_DB }} \
+              -e MONGO_USER=${{ secrets.USER_MONGODB }} \
+              -e MONGO_PASS=${{ secrets.PASS_DB }} \
+              -e MONGO_AUTH_DB=${{ secrets.MONGO_AUTH_DB }} \
+              -p ${{ secrets.PORT_CONNECT }}:${{ secrets.PORT_CONNECT }} \
+              $IMAGE_NAME
