@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dotenv/dotenv.dart';
+import 'package:dotenv/dotenv.dart' as dotenv;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -10,7 +10,23 @@ import 'package:postgres/postgres.dart';
 late final PostgreSQLConnection db;
 
 Future<void> main() async {
-  final env = DotEnv()..load();
+  // Intenta cargar variables desde .env si existe, si no usa Platform.environment
+  Map<String, String> env;
+  try {
+    final dotEnv = dotenv.DotEnv()..load();
+    if (dotEnv.isEveryDefined(
+        ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'])) {
+      print('📄 .env file loaded');
+      env = dotEnv.map;
+    } else {
+      print(
+          '⚠️ .env found but some variables missing, falling back to Platform.environment');
+      env = Platform.environment;
+    }
+  } catch (e) {
+    print('⚠️ .env file not found, using system environment variables');
+    env = Platform.environment;
+  }
 
   final host = env['DB_HOST'] ?? 'localhost';
   final port = int.tryParse(env['DB_PORT'] ?? '5432') ?? 5432;
