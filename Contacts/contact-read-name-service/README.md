@@ -1,43 +1,45 @@
 # 📞 contact-read-name-service
 
-A blazing-fast ⚡ microservice to **read contacts by name** using **gRPC**, powered by **Python + grpcio** and connected to a **Neo4j** graph database 🧠.
+A blazing-fast ⚡ microservice to **read contacts by name** using **gRPC**, powered by **Python (grpcio)** and connected to a **Neo4j** graph database 🧠.
 
 ---
 
 ## 🚀 Features
 
-✅ Built with **Python gRPC**  
-✅ Seamless integration with **Neo4j**  
-✅ Fetch contact data by name  
-✅ Fully containerized with Docker 🐳  
-✅ Scalable and modular structure  
-✅ Dev-friendly with examples and docs  
+✅ Built with **Python gRPC**
+✅ Seamless integration with **Neo4j**
+✅ Fetch contact data by name via gRPC
+✅ Fully containerized with Docker 🐳
+✅ Scalable and modular structure
+✅ Dev-friendly with full documentation and examples
 
 ---
 
 ## 📦 Technologies Used
 
-- Python 🐍
-- gRPC 🛰️
-- Neo4j 🧬
-- Docker 🐳
-- Protobuf 💬
+* Python 🐍
+* gRPC 🛰️
+* Neo4j 🧬
+* Docker 🐳
+* Protobuf 💬
+* `grpcio-tools`, `python-dotenv`, `neo4j`
 
 ---
 
 ## 🛠️ Installation
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/MarioFilian/Backend_MessagingService.git
 cd Backend_MessagingService/contact-read-name-service
-````
+```
 
-### 2. Create virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
@@ -50,7 +52,7 @@ pip install -r requirements.txt
 
 ## ⚙️ Environment Variables
 
-Create a `.env` file:
+Create a `.env` file in the root:
 
 ```env
 NEO4J_URI=bolt://localhost:7687
@@ -60,32 +62,41 @@ NEO4J_PASSWORD=example
 
 ---
 
-## 🧠 Proto Definition
+## 💬 gRPC Proto Definition
 
-Your gRPC interface is defined in `proto/contact.proto`.
-You can regenerate the Python bindings using:
+Your gRPC service is defined in `proto/contact.proto`.
+To generate the Python bindings:
 
 ```bash
 python -m grpc_tools.protoc -I ./proto --python_out=./app --grpc_python_out=./app ./proto/contact.proto
 ```
 
+This will create:
+
+* `app/contact_pb2.py`
+* `app/contact_pb2_grpc.py`
+
 ---
 
-## ▶️ Run the Service
+## ▶️ Run the gRPC Server
 
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 3027
-```
-
-Or use the gRPC server directly:
+The microservice runs as a **pure gRPC server**, not FastAPI:
 
 ```bash
 python app/server.py
 ```
 
+You should see:
+
+```
+🚀 gRPC server running on port 3027
+```
+
 ---
 
-## 🧪 Testing with grpcurl (CLI)
+## 🧪 Test the gRPC Endpoint (grpcurl)
+
+Install [`grpcurl`](https://github.com/fullstorydev/grpcurl) and run:
 
 ```bash
 grpcurl -plaintext -d '{ "name": "Juan" }' localhost:3027 contact.ContactService/GetContactsByName
@@ -99,7 +110,6 @@ grpcurl -plaintext -d '{ "name": "Juan" }' localhost:3027 contact.ContactService
 {
   "contacts": [
     {
-      "id": 1,
       "name": "Juan Pérez",
       "phone": "+593987654321"
     }
@@ -109,12 +119,12 @@ grpcurl -plaintext -d '{ "name": "Juan" }' localhost:3027 contact.ContactService
 
 ---
 
-## 🧪 Testing with Postman (gRPC Beta)
+## 🧪 Test with Postman (gRPC Mode)
 
-1. Open Postman → New → gRPC Request
-2. Set server to `localhost:3027`
+1. Open Postman → New → **gRPC Request**
+2. Set server: `localhost:3027`
 3. Import `proto/contact.proto`
-4. Call method `contact.ContactService/GetContactsByName`
+4. Call method: `contact.ContactService/GetContactsByName`
 5. Use payload:
 
    ```json
@@ -141,32 +151,22 @@ docker run -d -p 3027:3027 --env-file .env contact-read-name-service
 
 ---
 
-## 📁 Folder Structure
+## 📂 Folder Structure
 
 ```
 contact-read-name-service/
-│
 ├── app/
-│   ├── server.py         # gRPC server
-│   ├── database.py       # Neo4j connection
-│   └── proto             # Generated proto files
+│   ├── contact_service_impl.py    # Service logic
+│   ├── contact_pb2.py             # Generated proto (message types)
+│   ├── contact_pb2_grpc.py        # Generated proto (service interface)
+│   ├── database.py                # Neo4j connection logic
+│   └── server.py                  # gRPC server entrypoint
 │
 ├── proto/
-│   └── contact.proto     # gRPC definition
+│   └── contact.proto              # Proto definition file
 │
 ├── .env
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-## 💬 Contact
-
-If you find any bugs 🐛 or have questions 💡, feel free to open an [issue](https://github.com/your-user/contact-read-name-service/issues) or reach out.
-
----
-
-### 📣 Made with 💙 for Neo4j and Microservice lovers!
-

@@ -1,71 +1,68 @@
 # 📞 Contact Create Service
 
-Microservicio en Python (FastAPI) para crear contactos en una base de datos **Neo4j**. Forma parte de un sistema distribuido basado en microservicios, este específicamente permite la creación de nodos tipo `Contact`.
-
-## 🚀 Tecnologías
-
-- Python 3.10+
-- FastAPI
-- Neo4j
-- Uvicorn
-- python-dotenv
-- CORS habilitado
-- Documentación Swagger incluida
+Microservice built with **Python** and **FastAPI** to create `Contact` nodes in a **Neo4j** graph database.
+Part of a distributed microservices system, this service handles contact creation and exposes a RESTful API with automatic Swagger documentation.
 
 ---
 
-## ⚙️ Variables de entorno
+## 🚀 Technologies
 
-Crea un archivo `.env` con la siguiente configuración:
+* Python 3.10+
+* FastAPI (async web framework)
+* Neo4j (Graph Database)
+* Uvicorn (ASGI server)
+* python-dotenv (environment variable management)
+* CORS enabled
+* OpenAPI / Swagger UI documentation
+
+---
+
+## ⚙️ Environment Variables
+
+Create a `.env` file in the project root with the following:
 
 ```env
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=example
-````
+```
+
+* Adjust the connection URI, username, and password according to your Neo4j instance.
 
 ---
 
-## 📦 Instalación
+## 📦 Installation
 
 ```bash
-# Clona el repositorio
+# Clone repo
 git clone https://github.com/MarioFilian/Backend_MessagingService.git
 cd Backend_MessagingService/contact-create-service
 
-# Crea un entorno virtual
+# Create and activate Python virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Instala dependencias
+# Install dependencies
 pip install -r requirements.txt
 ```
 
 ---
 
-## ▶️ Ejecutar localmente
+## ▶️ Running Locally
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 3025 --reload
 ```
 
----
-
-## 🧪 Probar con Swagger
-
-Abre tu navegador en:
-
-```
-http://localhost:3025/docs
-```
-
-Verás una interfaz Swagger donde puedes probar la creación de contactos.
+* Access API docs at: [http://localhost:3025/docs](http://localhost:3025/docs)
 
 ---
 
-## 📝 Ejemplo de solicitud
+## 🧪 API Usage Example
 
-POST `/contacts`
+### POST `/contacts`
+
+Request Body:
 
 ```json
 {
@@ -74,11 +71,11 @@ POST `/contacts`
 }
 ```
 
-Respuesta:
+Response:
 
 ```json
 {
-  "id": 123,
+  "element_id": "01234567-89ab-cdef-0123-456789abcdef",
   "name": "María López",
   "phone": "+593912345678"
 }
@@ -88,13 +85,13 @@ Respuesta:
 
 ## 🐳 Docker
 
-Construir la imagen:
+Build Docker image:
 
 ```bash
 docker build -t contact-create-service .
 ```
 
-Ejecutar:
+Run Docker container:
 
 ```bash
 docker run -p 3025:3025 --env-file .env contact-create-service
@@ -102,31 +99,50 @@ docker run -p 3025:3025 --env-file .env contact-create-service
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
 ```
 contact-create-service/
 ├── app/
-│   ├── main.py         # Entrypoint FastAPI
-│   ├── database.py     # Conexión a Neo4j
-│   └── schemas.py      # Modelos Pydantic
-├── .env
-├── Dockerfile
+│   ├── main.py          # FastAPI application entrypoint
+│   ├── database.py      # Neo4j connection & queries
+│   └── schemas.py       # Pydantic request/response models
+├── .env                 # Environment variables
+├── Dockerfile           # Docker image definition
+├── requirements.txt     # Python dependencies
 ├── .gitignore
-├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 🧠 Recomendaciones
+## ⚙️ Code Highlights
 
-* Asegúrate de que el servicio de Neo4j esté en ejecución antes de lanzar este microservicio.
-* Usa el panel de administración de Neo4j ([http://localhost:7474](http://localhost:7474)) para consultar los nodos creados.
+### `app/database.py`
+
+* Handles Neo4j connection with authentication from `.env`
+* `create_contact(name, phone)` creates a `Contact` node and returns its internal Neo4j element ID plus properties
+
+### `app/main.py`
+
+* FastAPI app with CORS enabled
+* `/contacts` POST endpoint to create new contacts
+* Graceful shutdown closes Neo4j driver connection
+
+### `app/schemas.py`
+
+* Pydantic models for request validation and response serialization
 
 ---
 
-## 👤 Autor
+## 🧠 Recommendations
 
-Desarrollado por [Mario Filian](https://github.com/MarioFilian) como parte de un sistema de microservicios distribuidos.
+* Make sure Neo4j server is running and accessible via `NEO4J_URI`.
+* Use Neo4j Browser (usually at [http://localhost:7474](http://localhost:7474)) to verify nodes and run Cypher queries.
+* For production, restrict CORS origins to trusted domains instead of `"*"`.
 
+---
+
+## 👤 Author
+
+Developed by [Mario Filian](https://github.com/MarioFilian) as part of a microservices architecture for a messaging system.
