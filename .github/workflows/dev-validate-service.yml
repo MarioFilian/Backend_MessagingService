@@ -117,7 +117,7 @@ jobs:
             fi
 
             echo "🐳 Deploying container..."
-            sudo docker run -d --name $CONTAINER -p ${{ secrets.SERVER_PORT_VALIDATE }}:80 \
+            sudo docker run -d --name $CONTAINER -p ${{ secrets.PORT_VALIDATETOKEN }}:${{ secrets.PORT_VALIDATETOKEN }} \
               -e APP_ENV=prod \
               -e APP_DEBUG=0 \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
